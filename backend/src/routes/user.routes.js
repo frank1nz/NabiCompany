@@ -6,6 +6,6 @@ import { getUserProfile } from "../controllers/user.controller.js";
 const router = express.Router();
 
 // GET /api/users/:id  → เจ้าของดูตัวเอง หรือ admin ดูใครก็ได้
-router.get("/users/:id", verifyJWT, requireSelfOrAdmin, getUserProfile);
+router.get("/:id", verifyJWT, requireSelfOrAdmin, getUserProfile);
 
 export default router;

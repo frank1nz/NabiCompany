@@ -47,11 +47,20 @@ export async function registerWithKyc(req, res) {
       expiresIn: process.env.JWT_EXPIRES || "7d"
     });
 
+    const kycStatus = user.kyc?.status || "pending";
     res.status(201).json({
       token,
       user: {
         id: user._id, email: user.email, role: user.role,
-        ageVerified: user.ageVerified, kycStatus: user.kyc.status
+        ageVerified: user.ageVerified,
+        kycStatus,
+        kyc: {
+          status: kycStatus,
+          idCardImagePath: user.kyc?.idCardImagePath,
+          selfieWithIdPath: user.kyc?.selfieWithIdPath,
+        },
+        isVerified: user.ageVerified && kycStatus === "approved",
+        canOrderViaLine: user.ageVerified && kycStatus === "approved",
       },
       nextStep: user.ageVerified
         ? "Await admin KYC review"
@@ -83,6 +92,7 @@ export async function login(req, res) {
       { expiresIn: process.env.JWT_EXPIRES || "7d" }
     );
 
+    const kycStatus = user.kyc?.status || "pending";
     res.json({
       token,
       user: {
@@ -90,7 +100,17 @@ export async function login(req, res) {
         email: user.email,
         role: user.role,
         ageVerified: user.ageVerified,
-        kycStatus: user.kyc?.status || "pending",
+        kycStatus,
+        kyc: {
+          status: kycStatus,
+          idCardImagePath: user.kyc?.idCardImagePath,
+          selfieWithIdPath: user.kyc?.selfieWithIdPath,
+          reviewedAt: user.kyc?.reviewedAt,
+          reviewedBy: user.kyc?.reviewedBy,
+          note: user.kyc?.note,
+        },
+        isVerified: user.ageVerified && kycStatus === "approved",
+        canOrderViaLine: user.ageVerified && kycStatus === "approved",
       },
       redirectBase: user.role === "admin" ? "/admin" : "/app/profile",
       nextStep:
@@ -111,6 +131,18 @@ export async function me(req, res) {
     const user = await User.findById(req.user.id, { passwordHash: 0 }).lean();
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    const kycStatus = user.kyc?.status || "pending";
+    const kycPayload = user.kyc
+      ? {
+          status: kycStatus,
+          idCardImagePath: user.kyc.idCardImagePath,
+          selfieWithIdPath: user.kyc.selfieWithIdPath,
+          reviewedAt: user.kyc.reviewedAt,
+          reviewedBy: user.kyc.reviewedBy,
+          note: user.kyc.note,
+        }
+      : { status: kycStatus };
+
     res.json({
       id: user._id,
       email: user.email,
@@ -123,8 +155,12 @@ export async function me(req, res) {
         facebookProfileUrl: user.profile?.facebookProfileUrl,
       },
       ageVerified: user.ageVerified,
-      kycStatus: user.kyc?.status || "pending",
-      isVerified: user.ageVerified && user.kyc?.status === "approved", // ตรวจพร้อมกัน
+      kycStatus,
+      kyc: kycPayload,
+      isVerified: user.ageVerified && kycStatus === "approved",
+      canOrderViaLine: user.ageVerified && kycStatus === "approved",
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     });
   } catch (err) {
     console.error("Error fetching /me:", err);

@@ -3,17 +3,34 @@ import User from "../models/User.js";
 export async function getUserProfile(req, res) {
   try {
     const { id } = req.params;
-    const doc = await User.findById(id).select("-password -__v").lean();
+    const doc = await User.findById(id, { passwordHash: 0, __v: 0 }).lean();
     if (!doc) return res.status(404).json({ message: "User not found" });
 
+    const kycStatus = doc.kyc?.status || "pending";
     res.json({
       id: doc._id,
-      name: doc.name,
       email: doc.email,
       role: doc.role,
-      age: doc.age,
-      verified: doc.verified ?? (doc.kyc?.status === "approved"),
-      kycStatus: doc.kyc?.status ?? (doc.verified ? "approved" : "pending"),
+      profile: {
+        name: doc.profile?.name,
+        dob: doc.profile?.dob,
+        phone: doc.profile?.phone,
+        lineId: doc.profile?.lineId,
+        facebookProfileUrl: doc.profile?.facebookProfileUrl,
+      },
+      ageVerified: doc.ageVerified,
+      kycStatus,
+      kyc: doc.kyc
+        ? {
+            status: kycStatus,
+            idCardImagePath: doc.kyc.idCardImagePath,
+            selfieWithIdPath: doc.kyc.selfieWithIdPath,
+            reviewedAt: doc.kyc.reviewedAt,
+            reviewedBy: doc.kyc.reviewedBy,
+            note: doc.kyc.note,
+          }
+        : { status: kycStatus },
+      isVerified: doc.ageVerified && kycStatus === "approved",
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     });

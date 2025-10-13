@@ -7,7 +7,7 @@ const { user } = useAuth()
 return (
 <Paper sx={{ p: 3 }}>
 <Typography variant="h5">Welcome{user?.name ? `, ${user.name}` : ''}</Typography>
-<Typography variant="body1" mt={1}>Use the top menu to manage Leads, Products, and KYC.</Typography>
+<Typography variant="body1" mt={1}>Use the top menu to manage Orders, Products, and KYC.</Typography>
 </Paper>
 )
 }

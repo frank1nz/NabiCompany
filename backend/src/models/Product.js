@@ -9,13 +9,16 @@ const productSchema = new mongoose.Schema(
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     tags: { type: [String], default: [] },
 
-    visibility: { type: String, enum: ["public", "hidden"], default: "public" }, // ซ่อนชั่วคราว
+  visibility: { type: String, enum: ["public", "hidden"], default: "public" }, // ซ่อนชั่วคราว
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
-// index เบา ๆ เพื่อค้นหาชื่อ/แท็กได้
-productSchema.index({ name: "text", tags: 1 });
+productSchema.index(
+  { name: "text", description: "text", tags: "text" },
+  { name: "ProductTextIdx", weights: { name: 10, tags: 5, description: 2 } }
+);
+
 
 export default mongoose.model("Product", productSchema);

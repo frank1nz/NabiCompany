@@ -8,6 +8,8 @@ import {
   approveKyc,
   rejectKyc,
   listKycPending,
+  listOrders,
+  updateOrderStatus,
 } from "../controllers/admin.controller.js";
 
 const r = Router();
@@ -16,6 +18,8 @@ const r = Router();
 r.get("/stats/users", verifyJWT, requireRole("admin"), userStats);
 r.get("/users", verifyJWT, requireRole("admin"), listUsers);
 r.get("/stats/orders", verifyJWT, requireRole("admin"), orderStats);
+r.get("/orders", verifyJWT, requireRole("admin"), listOrders);
+r.patch("/orders/:id", verifyJWT, requireRole("admin"), updateOrderStatus);
 
 // 👇 เพิ่มส่วนตรวจและอนุมัติ KYC
 r.get("/kyc/pending", verifyJWT, requireRole("admin"), listKycPending);

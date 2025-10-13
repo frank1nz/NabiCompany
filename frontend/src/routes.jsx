@@ -2,79 +2,89 @@ import { createBrowserRouter } from 'react-router-dom'
 import Layout from './components/Layout'
 import RequireAuth from './components/RequireAuth'
 import RequireVerified from './components/RequireVerified'
+import RedirectIfAuthenticated from './components/RedirectIfAuthenticated'
 
-// pages (profile)
-import Profile from './pages/Profile'
-
-
-// pages (public)
+// Public pages
 import Home from './pages/Home'
 import Products from './pages/Products'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
 
-// pages (user)
-import Status from './pages/Status'
-import LeadForm from './pages/LeadForm'
+import Orders from './pages/Orders'
+import Profile from './pages/Profile'
 
-
-// pages (admin)
+// Admin pages
 import AdminKyc from './pages/admin/AdminKyc'
-import AdminLeads from './pages/admin/AdminLeads'
+import AdminOrders from './pages/admin/AdminOrders'
 import AdminProducts from './pages/admin/AdminProduct'
 
-
 export const router = createBrowserRouter([
-{
-path: '/',
-element: <Layout />,
-children: [
-// Public
-{ index: true, element: <Home /> }, // "/"
-{ path: 'product', element: <Products /> }, // "/product"
-{ path: 'login', element: <Login /> },
-{ path: 'register', element: <Register /> },
-
-
-// User (must login)
-{ path: 'status', element: (
-<RequireAuth roles={["user","admin"]}>
-<Status />
-</RequireAuth>
-) },
-{ path: 'lead', element: (
-<RequireAuth roles={["user","admin"]}>
-<RequireVerified>
-<LeadForm />
-</RequireVerified>
-</RequireAuth>
-) },
-
-
-// Admin only
-{ path: 'admin/kyc', element: (
-<RequireAuth roles={["admin"]}>
-<AdminKyc />
-</RequireAuth>
-) },
-{ path: 'admin/leads', element: (
-<RequireAuth roles={["admin"]}>
-<AdminLeads />
-</RequireAuth>
-) },
-{ path: 'admin/products', element: (
-<RequireAuth roles={["admin"]}>
-<AdminProducts />
-</RequireAuth>
-) },
-
-// Profile (user or admin can see any profile)
-{ path: 'me/:id', element: (
-<RequireAuth roles={["user","admin"]}>
-<Profile />
-</RequireAuth>
-)},
-],
-},
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'products', element: <Products /> },
+      {
+        path: 'login',
+        element: (
+          <RedirectIfAuthenticated>
+            <Login />
+          </RedirectIfAuthenticated>
+        ),
+      },
+      {
+        path: 'register',
+        element: (
+          <RedirectIfAuthenticated>
+            <Register />
+          </RedirectIfAuthenticated>
+        ),
+      },
+      
+      {
+        path: 'orders',
+        element: (
+          <RequireAuth roles={['user']}>
+            <RequireVerified>
+              <Orders />
+            </RequireVerified>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'me/:id',
+        element: (
+          <RequireAuth roles={['user', 'admin']}>
+            <Profile />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/kyc',
+        element: (
+          <RequireAuth roles={['admin']}>
+            <AdminKyc />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/orders',
+        element: (
+          <RequireAuth roles={['admin']}>
+            <AdminOrders />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/products',
+        element: (
+          <RequireAuth roles={['admin']}>
+            <AdminProducts />
+          </RequireAuth>
+        ),
+      },
+    ],
+  },
 ])
