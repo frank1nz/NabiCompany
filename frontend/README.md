@@ -14,7 +14,7 @@ npm install
 
 ```env
 VITE_API_BASE=http://localhost:5000/api
-VITE_UPLOAD_BASE=http://localhost:5000/uploads
+VITE_UPLOAD_BASE=http://localhost:5000
 ```
 
 > `VITE_API_BASE` ต้องชี้ไปที่ prefix `/api` ของ backend เสมอ  
