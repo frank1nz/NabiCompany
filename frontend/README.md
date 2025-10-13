@@ -38,7 +38,6 @@ npm run lint     # ตรวจโค้ดด้วย ESLint
 | `/products` | ทุกคน | ดูสินค้าสาธารณะทั้งหมด |
 | `/register` | guest | สร้างบัญชี + อัปโหลดเอกสาร KYC (ถ้ามี token จะถูก redirect ไป `/status`) |
 | `/login` | guest | ล็อกอิน (ถ้ามี token จะถูก redirect ไป `/status`) |
-| `/status` | user, admin | รายงานสถานะอายุ, KYC, ความพร้อมในการสั่งซื้อ |
 | `/orders` | user | สร้างคำสั่งซื้อ LINE (ต้องผ่าน KYC) และดูประวัติ |
 | `/me/:id` | user, admin | ดูโปรไฟล์ (มี document link) |
 | `/admin/kyc` | admin | รายชื่อผู้ใช้ที่รออนุมัติ/ปฏิเสธ |
