@@ -1,0 +1,48 @@
+# ===== Node.js =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-store/
+
+# ===== Build Output =====
+build/
+dist/
+.cache/
+coverage/
+
+# ===== Environment =====
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*
+*.env
+
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ===== Logs =====
+logs/
+*.log
+*.out
+*.pid
+
+# ===== Other =====
+*.zip
+*.tar.gz
+*.tgz
+*.bak
+*.tmp
+*.old

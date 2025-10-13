@@ -1,0 +1,59 @@
+# ===== Node.js =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-store/
+
+# ===== Environment =====
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*
+*.env
+
+# ===== Build & Temp Files =====
+dist/
+build/
+tmp/
+temp/
+.cache/
+coverage/
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# ===== Uploads / Static Files =====
+uploads/
+storage/
+public/uploads/
+static/uploads/
+
+# ===== Database / Data =====
+data/
+*.db
+*.sqlite
+
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ===== Other =====
+*.zip
+*.tar.gz
+*.bak
+*.tmp
+*.old
