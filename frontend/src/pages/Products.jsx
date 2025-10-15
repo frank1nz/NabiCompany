@@ -1,195 +1,244 @@
-import { useEffect, useState } from 'react'
-import {Paper,Typography,Card,CardContent,CardMedia,Chip,Stack,Box,
-} from '@mui/material'
-import { fetchPublicProducts } from '../lib/products'
+// src/pages/Products.jsx (refined)
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Paper, Typography, Card, CardContent, CardMedia,
+  Chip, Stack, Box, CardActionArea, Skeleton, Alert
+} from '@mui/material';
+import { fetchPublicProducts } from '../lib/products';
 
-const uploadBase = import.meta.env.VITE_UPLOAD_BASE
+const uploadBase = import.meta.env.VITE_UPLOAD_BASE;
+const imgSrc = (path) => (path?.startsWith?.('http') ? path : `${uploadBase}/${path}`);
 
-const imgSrc = (path) => (path?.startsWith('http') ? path : `${uploadBase}/${path}`)
+export default function Products({
+  compact = false,
+  limit = null,              // 👈 กำหนดจำนวนสูงสุดที่จะแสดง (เช่น 6/9/12)
+  showTitle = !compact,      // 👈 ซ่อน/แสดงหัวข้อ
+}) {
+  const [items, setItems]   = useState([]);
+  const [loading, setLoad]  = useState(true);
+  const [error, setError]   = useState('');
 
-export default function Products({ compact = false }) {
-  const [items, setItems] = useState([])
-
-  
   useEffect(() => {
+    setLoad(true);
     fetchPublicProducts()
-      .then((data) => setItems(data || []))
-      .catch((err) => console.error('fetch products failed', err))
-  }, []) 
+      .then((data) => {
+        setItems(Array.isArray(data) ? data : []);
+        setError('');
+      })
+      .catch((err) => {
+        setError(err?.response?.data?.message || 'โหลดสินค้าไม่สำเร็จ');
+      })
+      .finally(() => setLoad(false));
+  }, []);
 
-  // mock data
-  // const mockProducts = [
-  //   {
-  //     _id: 1,
-  //     name: 'The Spirit of ChaiyaPhum',
-  //     description: 'Crafted from local herbs and pure grain alcohol.',
-  //     price: 1890,
-  //     images: [
-  //       'https://res.theconcert.com/c_thumb/4597bedb2fa94121193375776d7e4a10f/1.jpg',
-  //     ],
-  //     tags: ['local', 'premium'],
-  //   },
-  //   {
-  //     _id: 2,
-  //     name: 'ONSON',
-  //     description: 'Thai handcrafted spirit from Sakon Nakhon.',
-  //     price: 1490,
-  //     images: [
-  //       'https://res.theconcert.com/c_thumb/98ce38ce484b6916216a3d7565d8fa52e/2.jpg',
-  //     ],
-  //     tags: ['handmade'],
-  //   },
-  //   {
-  //     _id: 3,
-  //     name: 'Kilo Spirits',
-  //     description: 'A modern gin distilled in Krabi.',
-  //     price: 2990,
-  //     images: [
-  //       'https://res.theconcert.com/c_thumb/5e7d5ea2c4f22bff0bc91909a23ffaca3/3.jpg',
-  //     ],
-  //     tags: ['gin', 'modern'],
-  //   },
-  //   {
-  //     _id: 4,
-  //     name: 'Nabi Honey Blend',
-  //     description: 'Infused with Doi Tung honey, smooth and mellow.',
-  //     price: 1690,
-  //     images: [
-  //       'https://res.theconcert.com/c_thumb/036f6dfbbbdb2df9f264056e67e82ae5f/4.jpg',
-  //     ],
-  //     tags: ['honey', 'sweet'],
-  //   },
-  //   {
-  //     _id: 5,
-  //     name: 'Nabi Coffee Cask',
-  //     description: 'Finished in coffee casks for roasted aroma.',
-  //     price: 2890,
-  //     images: [
-  //       'https://res.theconcert.com/c_thumb/af64c82fc589bbafedc334fff08eaa348/5.jpg',
-  //     ],
-  //     tags: ['coffee', 'limited'],
-  //   },
-  //   {
-  //     _id: 6,
-  //     name: 'Doi Tung Lychee Spirit',
-  //     description:
-  //       'กลั่นจากลิ้นจี่ดอยตุง หอมหวาน สดชื่นและเป็นเอกลักษณ์',
-  //     price: 1790,
-  //     images: [
-  //       'https://res.theconcert.com/c_thumb/4bcacdb926ddfa1f1112caee9857fa0f5/6.jpg',
-  //     ],
-  //     tags: ['fruit', 'limited'],
-  //   },
-  // ]
+  // เลือกจำนวนแสดงผล
+  const list = useMemo(() => {
+    const base = compact ? items.slice(0, 6) : items;
+    return typeof limit === 'number' ? base.slice(0, limit) : base;
+  }, [items, compact, limit]);
 
-  // useEffect(() => {
-  //   setItems(mockProducts)
-  // }, [])
-
-  const list = compact ? items.slice(0, 6) : items
+  const fmtPrice = (n) =>
+    typeof n === 'number'
+      ? `฿ ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+      : '-';
 
   return (
-    <Paper sx={{ p: 3, maxWidth: 1200, mx: 'auto', width: '100%' }}>
-      {!compact && (
-        <Typography variant="h6" mb={3} fontWeight="bold" align="center">
-          🥃 สินค้า
+    <Paper
+      sx={{
+        p: { xs: 2, md: 3 },
+        maxWidth: 1200,
+        mx: 'auto',
+        width: '100%',
+        borderRadius: 3,
+        boxShadow: '0 8px 24px rgba(0,0,0,.04)',
+        border: '1px solid rgba(0,0,0,.06)',
+        bgcolor: '#fff',
+      }}
+      elevation={0}
+    >
+      {showTitle && (
+        <Typography
+          variant="h6"
+          mb={2}
+          fontWeight={900}
+          align="center"
+          sx={{ letterSpacing: 0.3 }}
+        >
+          Featured Products
         </Typography>
       )}
 
-      {/*  ใช้ Box Grid แทน MUI Grid */}
+      {/* แจ้ง error */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* กริดสินค้า */}
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns: {
-            xs: '1fr', // มือถือ
-            sm: 'repeat(2, 1fr)', // แท็บเล็ต
-            md: 'repeat(3, 1fr)', // คอมพ์
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
           },
-          gap: 3,
-          justifyItems: 'center',
+          gap: { xs: 2, md: 3 },
         }}
       >
-        {list.map((product) => {
-          const cover = product.images?.[0]
-          return (
-            <Card
-              key={product._id}
-              sx={{
-                borderRadius: 3,
-                overflow: 'hidden',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: 4,
-                width: '100%',
-                maxWidth: 340,
-                transition: 'transform 0.2s',
-                '&:hover': { transform: 'scale(1.03)' },
-              }}
-            >
-              {cover && (
-                <CardMedia
-                  component="img"
-                  image={imgSrc(cover)}
-                  alt={product.name}
-                  sx={{
-                    height: 250,
-                    width: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-              )}
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {product.name}
-                </Typography>
-                {product.description && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 0.5 }}
-                  >
-                    {product.description}
-                  </Typography>
-                )}
-                {product.price != null && (
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      mt: 1,
-                      fontWeight: 'bold',
-                      color: '#00796b',
-                    }}
-                  >
-                    ฿ {Number(product.price).toLocaleString()}
-                  </Typography>
-                )}
-                {product.tags?.length ? (
-                  <Stack direction="row" spacing={0.5} mt={1} flexWrap="wrap">
-                    {product.tags.map((tag) => (
-                      <Chip
-                        key={tag}
-                        label={tag}
-                        size="small"
-                        variant="outlined"
-                      />
-                    ))}
-                  </Stack>
-                ) : null}
-              </CardContent>
-            </Card>
-          )
-        })}
+        {/* Skeleton ตอนโหลด */}
+        {loading &&
+          Array.from({ length: compact ? 6 : 9 }).map((_, i) => (
+            <Box key={`sk-${i}`}>
+              <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} />
+              <Skeleton height={24} sx={{ mt: 1, width: '80%' }} />
+              <Skeleton height={18} sx={{ width: '60%' }} />
+            </Box>
+          ))}
 
-        {/* ถ้าไม่มีสินค้า */}
-        {!list.length && (
-          <Box sx={{ textAlign: 'center', py: 5 }}>
-            <Typography color="text.secondary">
-              ไม่มีสินค้าให้แสดง
-            </Typography>
+        {/* การ์ดสินค้า */}
+        {!loading &&
+          list.map((product) => {
+            const cover = product.images?.[0];
+            return (
+              <Card
+                key={product._id}
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  border: '1px solid rgba(0,0,0,.06)',
+                  boxShadow: '0 6px 16px rgba(0,0,0,.05)',
+                  transition: 'transform .18s ease, box-shadow .18s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 10px 28px rgba(0,0,0,.08)',
+                  },
+                }}
+              >
+                <CardActionArea
+                  onClick={() => {
+                    // ถ้ามีหน้า detail ในอนาคต: navigate(`/products/${product._id}`)
+                  }}
+                >
+                  {/* รูปอัตราส่วนคงที่ (16:10) */}
+                  <Box sx={{ position: 'relative', width: '100%', pt: '62.5%' }}>
+                    {cover ? (
+                      <CardMedia
+                        component="img"
+                        image={imgSrc(cover)}
+                        alt={product.name}
+                        loading="lazy"
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.src =
+                            'data:image/svg+xml;utf8,' +
+                            encodeURIComponent(
+                              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><rect width="100%" height="100%" fill="#f2f2f2"/><text x="50%" y="50%" text-anchor="middle" fill="#aaa" font-size="28" font-family="Arial">No Image</text></svg>`
+                            );
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          bgcolor: '#f5f5f5',
+                          display: 'grid',
+                          placeItems: 'center',
+                          color: 'text.disabled',
+                          fontSize: 14,
+                        }}
+                      >
+                        No Image
+                      </Box>
+                    )}
+                  </Box>
+
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={800}
+                      sx={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {product.name}
+                    </Typography>
+
+                    {product.description && (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          mt: 0.5,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          minHeight: 40,
+                        }}
+                      >
+                        {product.description}
+                      </Typography>
+                    )}
+
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      sx={{ mt: 1.25 }}
+                    >
+                      <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#0f5132' }}>
+                        {fmtPrice(product.price)}
+                      </Typography>
+                    </Stack>
+
+                    {!!product.tags?.length && (
+                      <Stack direction="row" spacing={0.5} mt={1} flexWrap="wrap">
+                        {product.tags.slice(0, 3).map((tag) => (
+                          <Chip
+                            key={tag}
+                            label={tag}
+                            size="small"
+                            variant="outlined"
+                            sx={{ textTransform: 'capitalize' }}
+                          />
+                        ))}
+                        {product.tags.length > 3 && (
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            label={`+${product.tags.length - 3}`}
+                          />
+                        )}
+                      </Stack>
+                    )}
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            );
+          })}
+
+        {/* ว่างเปล่า */}
+        {!loading && list.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 6, gridColumn: '1 / -1' }}>
+            <Typography color="text.secondary">ยังไม่มีสินค้าให้แสดง</Typography>
           </Box>
         )}
       </Box>
     </Paper>
-  )
+  );
 }

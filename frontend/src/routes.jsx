@@ -7,9 +7,9 @@ import RedirectIfAuthenticated from './components/RedirectIfAuthenticated'
 // Public pages
 import Home from './pages/Home'
 import Products from './pages/Products'
+import OurStory from './pages/OurStory'   // 👈 เพิ่ม
 import Login from './pages/Login'
 import Register from './pages/Register'
-
 
 import Orders from './pages/Orders'
 import Profile from './pages/Profile'
@@ -26,6 +26,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'products', element: <Products /> },
+      { path: 'about', element: <OurStory /> },   // 👈 เพิ่ม route Our Story
+
       {
         path: 'login',
         element: (
@@ -42,7 +44,7 @@ export const router = createBrowserRouter([
           </RedirectIfAuthenticated>
         ),
       },
-      
+
       {
         path: 'orders',
         element: (
@@ -61,6 +63,8 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
+
+      // Admin
       {
         path: 'admin/kyc',
         element: (
@@ -85,6 +89,9 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
+
+      // (ทางเลือก) 404 แบบง่าย
+      // { path: '*', element: <div style={{padding:24}}>Not Found</div> },
     ],
   },
 ])
