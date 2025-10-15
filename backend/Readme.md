@@ -162,16 +162,17 @@ Headers: `Authorization: Bearer <USER_JWT>`
 | DELETE | `/api/admin/products/:id/hard` | hard delete |
 
 ตัวอย่าง POST (Raw JSON)
-```json
-{
-  "name": "Nabi Premium",
-  "description": "Herbal product description",
-  "price": 199,
-  "tags": ["herb", "wellness"],
-  "visibility": "public",
-  "status": "active"
-}
-```
+
+Body → `form-data`
+| Key | Type | Value |
+| --- | ---- | ----- |
+| name | Text | `Nabi Premium` |
+| description | Text | `Herbal product description` |
+| price | Text | `199` |
+| tags | Text | `herb` |
+| visibility | Text | `public` |
+| status | Text | `active` |
+| images | File | (เลือกไฟล์รูป) |
 
 ### 4.3 ตรวจออเดอร์จาก LINE
 - รายการออเดอร์ทั้งหมด  
