@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {Paper,Typography,Card,CardContent,CardMedia,Chip,Stack,Box,
 } from '@mui/material'
-//import { fetchPublicProducts } from '../lib/products'
+import { fetchPublicProducts } from '../lib/products'
 
 const uploadBase = import.meta.env.VITE_UPLOAD_BASE
 
@@ -10,81 +10,81 @@ const imgSrc = (path) => (path?.startsWith('http') ? path : `${uploadBase}/${pat
 export default function Products({ compact = false }) {
   const [items, setItems] = useState([])
 
-   {/* โหลดจาก API เดิม
+  
   useEffect(() => {
     fetchPublicProducts()
       .then((data) => setItems(data || []))
       .catch((err) => console.error('fetch products failed', err))
-  }, []) */}
+  }, []) 
 
   // mock data
-  const mockProducts = [
-    {
-      _id: 1,
-      name: 'The Spirit of ChaiyaPhum',
-      description: 'Crafted from local herbs and pure grain alcohol.',
-      price: 1890,
-      images: [
-        'https://res.theconcert.com/c_thumb/4597bedb2fa94121193375776d7e4a10f/1.jpg',
-      ],
-      tags: ['local', 'premium'],
-    },
-    {
-      _id: 2,
-      name: 'ONSON',
-      description: 'Thai handcrafted spirit from Sakon Nakhon.',
-      price: 1490,
-      images: [
-        'https://res.theconcert.com/c_thumb/98ce38ce484b6916216a3d7565d8fa52e/2.jpg',
-      ],
-      tags: ['handmade'],
-    },
-    {
-      _id: 3,
-      name: 'Kilo Spirits',
-      description: 'A modern gin distilled in Krabi.',
-      price: 2990,
-      images: [
-        'https://res.theconcert.com/c_thumb/5e7d5ea2c4f22bff0bc91909a23ffaca3/3.jpg',
-      ],
-      tags: ['gin', 'modern'],
-    },
-    {
-      _id: 4,
-      name: 'Nabi Honey Blend',
-      description: 'Infused with Doi Tung honey, smooth and mellow.',
-      price: 1690,
-      images: [
-        'https://res.theconcert.com/c_thumb/036f6dfbbbdb2df9f264056e67e82ae5f/4.jpg',
-      ],
-      tags: ['honey', 'sweet'],
-    },
-    {
-      _id: 5,
-      name: 'Nabi Coffee Cask',
-      description: 'Finished in coffee casks for roasted aroma.',
-      price: 2890,
-      images: [
-        'https://res.theconcert.com/c_thumb/af64c82fc589bbafedc334fff08eaa348/5.jpg',
-      ],
-      tags: ['coffee', 'limited'],
-    },
-    {
-      _id: 6,
-      name: 'Doi Tung Lychee Spirit',
-      description:
-        'กลั่นจากลิ้นจี่ดอยตุง หอมหวาน สดชื่นและเป็นเอกลักษณ์',
-      price: 1790,
-      images: [
-        'https://res.theconcert.com/c_thumb/4bcacdb926ddfa1f1112caee9857fa0f5/6.jpg',
-      ],
-      tags: ['fruit', 'limited'],
-    },
-  ]
+  // const mockProducts = [
+  //   {
+  //     _id: 1,
+  //     name: 'The Spirit of ChaiyaPhum',
+  //     description: 'Crafted from local herbs and pure grain alcohol.',
+  //     price: 1890,
+  //     images: [
+  //       'https://res.theconcert.com/c_thumb/4597bedb2fa94121193375776d7e4a10f/1.jpg',
+  //     ],
+  //     tags: ['local', 'premium'],
+  //   },
+  //   {
+  //     _id: 2,
+  //     name: 'ONSON',
+  //     description: 'Thai handcrafted spirit from Sakon Nakhon.',
+  //     price: 1490,
+  //     images: [
+  //       'https://res.theconcert.com/c_thumb/98ce38ce484b6916216a3d7565d8fa52e/2.jpg',
+  //     ],
+  //     tags: ['handmade'],
+  //   },
+  //   {
+  //     _id: 3,
+  //     name: 'Kilo Spirits',
+  //     description: 'A modern gin distilled in Krabi.',
+  //     price: 2990,
+  //     images: [
+  //       'https://res.theconcert.com/c_thumb/5e7d5ea2c4f22bff0bc91909a23ffaca3/3.jpg',
+  //     ],
+  //     tags: ['gin', 'modern'],
+  //   },
+  //   {
+  //     _id: 4,
+  //     name: 'Nabi Honey Blend',
+  //     description: 'Infused with Doi Tung honey, smooth and mellow.',
+  //     price: 1690,
+  //     images: [
+  //       'https://res.theconcert.com/c_thumb/036f6dfbbbdb2df9f264056e67e82ae5f/4.jpg',
+  //     ],
+  //     tags: ['honey', 'sweet'],
+  //   },
+  //   {
+  //     _id: 5,
+  //     name: 'Nabi Coffee Cask',
+  //     description: 'Finished in coffee casks for roasted aroma.',
+  //     price: 2890,
+  //     images: [
+  //       'https://res.theconcert.com/c_thumb/af64c82fc589bbafedc334fff08eaa348/5.jpg',
+  //     ],
+  //     tags: ['coffee', 'limited'],
+  //   },
+  //   {
+  //     _id: 6,
+  //     name: 'Doi Tung Lychee Spirit',
+  //     description:
+  //       'กลั่นจากลิ้นจี่ดอยตุง หอมหวาน สดชื่นและเป็นเอกลักษณ์',
+  //     price: 1790,
+  //     images: [
+  //       'https://res.theconcert.com/c_thumb/4bcacdb926ddfa1f1112caee9857fa0f5/6.jpg',
+  //     ],
+  //     tags: ['fruit', 'limited'],
+  //   },
+  // ]
 
-  useEffect(() => {
-    setItems(mockProducts)
-  }, [])
+  // useEffect(() => {
+  //   setItems(mockProducts)
+  // }, [])
 
   const list = compact ? items.slice(0, 6) : items
 

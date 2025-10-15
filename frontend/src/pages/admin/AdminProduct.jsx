@@ -1,17 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-  Paper,
-  Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Stack,
-  TextField,
-  Button,
-  Chip,
-} from '@mui/material'
+import { Stack, Paper, Typography } from '@mui/material'
 import {
   adminListProducts,
   adminCreateProduct,
@@ -19,6 +7,10 @@ import {
   adminSoftDeleteProduct,
   adminRestoreProduct,
 } from '../../lib/products'
+import ProductForm from '../../components/admin-products/ProductForm'
+import ProductTable from '../../components/admin-products/ProductTable'
+import EditProductDialog from '../../components/admin-products/EditProductDialog'
+import DeleteConfirmDialog from '../../components/admin-products/DeleteConfirmDialog'
 
 const initialForm = {
   name: '',
@@ -31,190 +23,189 @@ const initialForm = {
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
-  const [form, setForm] = useState(initialForm)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [editOpen, setEditOpen] = useState(false)
+  const [editProduct, setEditProduct] = useState(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmTarget, setConfirmTarget] = useState(null)
 
   const loadProducts = () =>
     adminListProducts({ includeDeleted: true })
       .then((data) => {
-        setProducts(data)
+        setProducts(data || [])
         setError('')
       })
-      .catch((err) => setError(err?.response?.data?.message || 'โหลดข้อมูลสินค้าไม่สำเร็จ'))
+      .catch((err) =>
+        setError(err?.response?.data?.message || 'โหลดข้อมูลสินค้าไม่สำเร็จ')
+      )
 
   useEffect(() => {
     loadProducts()
   }, [])
 
-  const handleChange = (field) => (event) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }))
-  }
-
-  async function handleCreate(e) {
-    e.preventDefault()
+  // ---------- CREATE ----------
+  async function handleCreate({ form, files }) {
     setError('')
     setSuccess('')
+
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      price: Number(form.price) || 0,
+      visibility: form.visibility,
+      status: form.status,
+      tags: form.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
+    }
+    if (!payload.name) {
+      setError('กรุณาระบุชื่อสินค้า')
+      return false
+    }
+
     try {
-      const payload = {
-        name: form.name.trim(),
-        description: form.description.trim(),
-        price: Number(form.price) || 0,
-        visibility: form.visibility,
-        status: form.status,
-        tags: form.tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
+      if (files?.length) {
+        const fd = new FormData()
+        fd.append('name', payload.name)
+        fd.append('description', payload.description)
+        fd.append('price', String(payload.price))
+        fd.append('visibility', payload.visibility)
+        fd.append('status', payload.status)
+        payload.tags.forEach((t) => fd.append('tags[]', t))
+        files.forEach((f) => fd.append('images', f))
+        await adminCreateProduct(fd)
+      } else {
+        await adminCreateProduct(payload)
       }
-      if (!payload.name) {
-        setError('กรุณาระบุชื่อสินค้า')
-        return
-      }
-      await adminCreateProduct(payload)
-      setForm(initialForm)
       setSuccess('เพิ่มสินค้าเรียบร้อย')
-      loadProducts()
+      await loadProducts()
+      return true
     } catch (err) {
       setError(err?.response?.data?.message || 'เพิ่มสินค้าไม่สำเร็จ')
+      return false
     }
   }
 
+  // ---------- EDIT ----------
+  const openEdit = (product) => {
+    setEditProduct(product)
+    setEditOpen(true)
+    setError('')
+    setSuccess('')
+  }
+  const closeEdit = () => {
+    setEditOpen(false)
+    setEditProduct(null)
+  }
+
+  async function submitEdit({ form, files }) {
+    if (!editProduct) return
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      price: Number(form.price) || 0,
+      visibility: form.visibility,
+      status: form.status,
+      tags: form.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
+    }
+    if (!payload.name) {
+      setError('กรุณาระบุชื่อสินค้า')
+      return
+    }
+
+    try {
+      if (files?.length) {
+        const fd = new FormData()
+        fd.append('name', payload.name)
+        fd.append('description', payload.description)
+        fd.append('price', String(payload.price))
+        fd.append('visibility', payload.visibility)
+        fd.append('status', payload.status)
+        payload.tags.forEach((t) => fd.append('tags[]', t))
+        files.forEach((f) => fd.append('images', f))
+        await adminUpdateProduct(editProduct._id, fd)
+      } else {
+        await adminUpdateProduct(editProduct._id, payload)
+      }
+      setSuccess('อัปเดตสินค้าเรียบร้อย')
+      closeEdit()
+      loadProducts()
+    } catch (err) {
+      setError(err?.response?.data?.message || 'อัปเดตสินค้าไม่สำเร็จ')
+    }
+  }
+
+  // ---------- STATUS ----------
   async function toggleStatus(product) {
     const nextStatus = product.status === 'active' ? 'inactive' : 'active'
     await adminUpdateProduct(product._id, { status: nextStatus })
     loadProducts()
   }
 
-  async function toggleDeleted(product) {
-    if (product.deletedAt) {
-      await adminRestoreProduct(product._id)
+  // ---------- SOFT DELETE / RESTORE ----------
+  const askDelete = (product) => {
+    setConfirmTarget(product)
+    setConfirmOpen(true)
+  }
+  const closeConfirm = () => {
+    setConfirmOpen(false)
+    setConfirmTarget(null)
+  }
+  async function confirmDelete() {
+    if (!confirmTarget) return
+    if (confirmTarget.deletedAt) {
+      await adminRestoreProduct(confirmTarget._id)
     } else {
-      await adminSoftDeleteProduct(product._id)
+      await adminSoftDeleteProduct(confirmTarget._id)
     }
+    closeConfirm()
     loadProducts()
   }
 
   return (
     <Stack spacing={3}>
-      <Paper sx={{ p: 3 }} component="form" onSubmit={handleCreate}>
+      <Paper sx={{ p: 3 }}>
         <Typography variant="h6" mb={2}>เพิ่มสินค้า</Typography>
-        <Stack spacing={2}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
-            <TextField
-              label="ชื่อสินค้า"
-              value={form.name}
-              onChange={handleChange('name')}
-              fullWidth
-            />
-            <TextField
-              label="ราคา (บาท)"
-              type="number"
-              value={form.price}
-              onChange={handleChange('price')}
-              sx={{ minWidth: 180 }}
-            />
-          </Stack>
-          <TextField
-            label="รายละเอียด"
-            value={form.description}
-            onChange={handleChange('description')}
-            multiline
-            rows={3}
-          />
-          <TextField
-            label="แท็ก (คั่นด้วยเครื่องหมายจุลภาค)"
-            value={form.tags}
-            onChange={handleChange('tags')}
-          />
-          <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
-            <TextField
-              label="Visibility"
-              value={form.visibility}
-              onChange={handleChange('visibility')}
-              placeholder="public / hidden"
-              sx={{ minWidth: 160 }}
-            />
-            <TextField
-              label="Status"
-              value={form.status}
-              onChange={handleChange('status')}
-              placeholder="active / inactive"
-              sx={{ minWidth: 160 }}
-            />
-          </Stack>
-          {success && <Typography color="success.main">{success}</Typography>}
-          {error && <Typography color="error.main">{error}</Typography>}
-          <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>
-            เพิ่มสินค้า
-          </Button>
-        </Stack>
+        <ProductForm
+          initialForm={initialForm}
+          onSubmit={handleCreate}
+          success={success}
+          error={error}
+          onClearMessages={() => {
+            setError('')
+            setSuccess('')
+          }}
+        />
       </Paper>
 
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" mb={2}>รายการสินค้า</Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>ชื่อ</TableCell>
-              <TableCell>ราคา</TableCell>
-              <TableCell>สถานะ</TableCell>
-              <TableCell>Visibility</TableCell>
-              <TableCell>Tags</TableCell>
-              <TableCell>จัดการ</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {products.map((product) => (
-              <TableRow key={product._id}>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>฿ {Number(product.price || 0).toLocaleString()}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={product.status}
-                    size="small"
-                    color={product.status === 'active' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{product.visibility}</TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                    {(product.tags || []).map((tag) => (
-                      <Chip key={tag} label={tag} size="small" variant="outlined" />
-                    ))}
-                  </Stack>
-                </TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => toggleStatus(product)}
-                    >
-                      {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                    </Button>
-                    <Button
-                      size="small"
-                      color={product.deletedAt ? 'success' : 'error'}
-                      variant="contained"
-                      onClick={() => toggleDeleted(product)}
-                    >
-                      {product.deletedAt ? 'Restore' : 'Soft Delete'}
-                    </Button>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!products.length && (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  ยังไม่มีสินค้า
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <ProductTable
+          products={products}
+          onToggleStatus={toggleStatus}
+          onEdit={openEdit}
+          onAskDelete={askDelete}
+        />
       </Paper>
+
+      <EditProductDialog
+        open={editOpen}
+        product={editProduct}
+        onClose={closeEdit}
+        onSubmit={submitEdit}
+      />
+
+      <DeleteConfirmDialog
+        open={confirmOpen}
+        product={confirmTarget}
+        onClose={closeConfirm}
+        onConfirm={confirmDelete}
+      />
     </Stack>
   )
 }
