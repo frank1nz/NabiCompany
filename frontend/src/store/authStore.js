@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { me } from '../lib/auth'
+import { useCart } from './cartStore'
 
 export const useAuth = create((set) => ({
   user: null,
@@ -32,6 +33,11 @@ export const useAuth = create((set) => ({
   logout: () => {
     localStorage.removeItem('token')
     set({ user: null, loading: false })
+    try {
+      useCart.getState().reset()
+    } catch (err) {
+      // cart store may not be initialised yet; ignore
+    }
     window.location.href = '/login'
   },
 }))

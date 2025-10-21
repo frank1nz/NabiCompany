@@ -42,6 +42,7 @@ const initialState = {
   phone: '',
   lineId: '',
   facebookProfileUrl: '',
+  address: '',
   idCardImage: null,
   selfieWithId: null,
   agree: false,
@@ -87,6 +88,7 @@ export default function Register() {
 
   const canSubmit =
     form.name &&
+    form.address &&
     emailOk &&
     pwOk &&
     ageOk &&
@@ -128,6 +130,7 @@ export default function Register() {
         phone: form.phone,
         lineId: form.lineId,
         facebookProfileUrl: form.facebookProfileUrl,
+        address: form.address,
       }).forEach(([k, v]) => fd.append(k, v ?? ''));
 
       if (form.idCardImage) fd.append('idCardImage', form.idCardImage);
@@ -318,6 +321,19 @@ export default function Register() {
                       </InputAdornment>
                     ),
                   }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="ที่อยู่สำหรับจัดส่ง"
+                  value={form.address}
+                  onChange={(e) => setField('address', e.target.value)}
+                  required
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  placeholder="บ้านเลขที่ / อาคาร / ถนน / แขวง / เขต / จังหวัด / รหัสไปรษณีย์"
                 />
               </Grid>
             </Grid>

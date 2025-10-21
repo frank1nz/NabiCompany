@@ -13,7 +13,7 @@ const orderItemSchema = new mongoose.Schema(
 const orderSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    channel: { type: String, enum: ["line"], default: "line" },
+    channel: { type: String, enum: ["line", "web"], default: "web" },
     status: {
       type: String,
       enum: ["pending", "confirmed", "rejected", "fulfilled", "cancelled"],
@@ -23,6 +23,24 @@ const orderSchema = new mongoose.Schema(
     note: String,
     total: { type: Number, default: 0, min: 0 },
     adminNote: String,
+    shippingAddress: String,
+    payment: {
+      method: { type: String, enum: ["promptpay"], default: "promptpay" },
+      status: {
+        type: String,
+        enum: ["pending", "paid", "failed", "expired"],
+        default: "pending",
+      },
+      amount: { type: Number, default: 0, min: 0 },
+      currency: { type: String, default: "THB" },
+      reference: String,
+      target: String,
+      targetFormatted: String,
+      payload: String,
+      generatedAt: { type: Date, default: Date.now },
+      expiresAt: Date,
+      paidAt: Date,
+    },
     meta: {
       lineUserId: String,
       lineMessageId: String,

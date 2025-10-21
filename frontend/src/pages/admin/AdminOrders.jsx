@@ -11,6 +11,7 @@ import FilterAltRoundedIcon from '@mui/icons-material/FilterAltRounded';
 import { adminListOrders, adminUpdateOrderStatus } from '../../lib/orders';
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'rejected', 'fulfilled', 'cancelled'];
+const PAYMENT_OPTIONS = ['pending', 'paid', 'failed', 'expired'];
 
 const STATUS_STYLES = {
   pending:   { color: '#8a6d3b', bg: 'rgba(212,175,55,.12)' }, // waiting (ทองหม่น)
@@ -20,13 +21,20 @@ const STATUS_STYLES = {
   cancelled: { color: '#424242', bg: 'rgba(0,0,0,.08)'      }, // เทา
 };
 
+const PAYMENT_STYLES = {
+  pending: { color: '#8a6d3b', bg: 'rgba(212,175,55,.12)' },
+  paid:    { color: '#1b5e20', bg: 'rgba(76,175,80,.15)' },
+  failed:  { color: '#b71c1c', bg: 'rgba(244,67,54,.15)' },
+  expired: { color: '#424242', bg: 'rgba(0,0,0,.08)' },
+};
+
 const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
 
-function StatusChip({ value }) {
-  const s = STATUS_STYLES[value] || {};
+function StatusChip({ value, styles = STATUS_STYLES, label }) {
+  const s = styles[value] || {};
   return (
     <Chip
-      label={value}
+      label={label || value}
       size="small"
       sx={{
         fontWeight: 700,
@@ -42,6 +50,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [noteDraft, setNoteDraft] = useState({});
   const [statusDraft, setStatusDraft] = useState({});
+  const [paymentDraft, setPaymentDraft] = useState({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -75,8 +84,14 @@ export default function AdminOrders() {
     const id = getId(o);
     const newStatus = statusDraft[id] ?? o.status;
     const newNote = noteDraft[id] ?? o.adminNote ?? '';
+    const newPaymentStatus = paymentDraft[id] ?? o.payment?.status ?? 'pending';
+    const originalPaymentStatus = o.payment?.status ?? 'pending';
     // มีการเปลี่ยนแปลงหรือไม่
-    return (newStatus !== o.status) || (newNote !== (o.adminNote ?? ''));
+    return (
+      newStatus !== o.status ||
+      newNote !== (o.adminNote ?? '') ||
+      newPaymentStatus !== originalPaymentStatus
+    );
   };
 
   async function handleUpdate(order) {
@@ -85,12 +100,38 @@ export default function AdminOrders() {
     setSuccess('');
     setSavingId(id);
     try {
-      await adminUpdateOrderStatus(id, {
-        status: statusDraft[id] ?? order.status,
-        adminNote: noteDraft[id] ?? order.adminNote ?? '',
-      });
+      const statusValue = statusDraft[id] ?? order.status;
+      const noteValue = noteDraft[id] ?? order.adminNote ?? '';
+      const paymentValue = paymentDraft[id] ?? order.payment?.status ?? 'pending';
+
+      const payload = {};
+      if (statusValue !== order.status) payload.status = statusValue;
+      if (noteValue !== (order.adminNote ?? '')) payload.adminNote = noteValue;
+      if (paymentValue !== (order.payment?.status ?? 'pending')) payload.paymentStatus = paymentValue;
+
+      if (!Object.keys(payload).length) {
+        setSavingId('');
+        return;
+      }
+
+      await adminUpdateOrderStatus(id, payload);
       setSuccess(`อัปเดตคำสั่งซื้อ #${id} เรียบร้อย`);
       await loadOrders();
+      setStatusDraft((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setNoteDraft((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setPaymentDraft((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     } catch (err) {
       setError(err?.response?.data?.message || 'อัปเดตไม่ได้');
     } finally {
@@ -111,7 +152,7 @@ export default function AdminOrders() {
       >
         <Stack direction="row" alignItems="baseline" spacing={2}>
           <Typography variant="h6" fontWeight={900} sx={{ color: BRAND.navy }}>
-            จัดการคำสั่งซื้อจาก LINE
+            จัดการคำสั่งซื้อ
           </Typography>
           <Divider flexItem orientation="vertical" />
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -149,6 +190,7 @@ export default function AdminOrders() {
               <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>คำสั่งซื้อ</TableCell>
               <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ลูกค้า</TableCell>
               <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>สถานะ</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>การชำระเงิน</TableCell>
               <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ยอดรวม</TableCell>
               <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: 260 }}>Note</TableCell>
               <TableCell align="right" sx={{ fontWeight: 700, color: BRAND.navy }}>Action</TableCell>
@@ -190,21 +232,56 @@ export default function AdminOrders() {
                   </TableCell>
 
                   <TableCell>
-                    <StatusChip value={order.status} />
-                    <Select
-                      size="small"
-                      sx={{ mt: 1, minWidth: 160, textTransform: 'capitalize' }}
-                      value={statusValue}
-                      onChange={(e) =>
-                        setStatusDraft((prev) => ({ ...prev, [id]: e.target.value }))
-                      }
-                    >
-                      {STATUS_OPTIONS.map((status) => (
-                        <MenuItem key={status} value={status} sx={{ textTransform: 'capitalize' }}>
-                          {status}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                    <Stack spacing={1}>
+                      <StatusChip value={order.status} />
+                      <Select
+                        size="small"
+                        sx={{ minWidth: 160, textTransform: 'capitalize' }}
+                        value={statusValue}
+                        onChange={(e) =>
+                          setStatusDraft((prev) => ({ ...prev, [id]: e.target.value }))
+                        }
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <MenuItem key={status} value={status} sx={{ textTransform: 'capitalize' }}>
+                            {status}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </Stack>
+                  </TableCell>
+
+                  <TableCell>
+                    <Stack spacing={1}>
+                      <StatusChip
+                        value={order.payment?.status ?? 'pending'}
+                        styles={PAYMENT_STYLES}
+                      />
+                      <Select
+                        size="small"
+                        sx={{ minWidth: 160, textTransform: 'capitalize' }}
+                        value={paymentDraft[id] ?? order.payment?.status ?? 'pending'}
+                        onChange={(e) =>
+                          setPaymentDraft((prev) => ({ ...prev, [id]: e.target.value }))
+                        }
+                      >
+                        {PAYMENT_OPTIONS.map((status) => (
+                          <MenuItem key={status} value={status} sx={{ textTransform: 'capitalize' }}>
+                            {status}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {order.payment?.reference && (
+                        <Typography variant="caption" color="text.secondary">
+                          REF: {order.payment.reference}
+                        </Typography>
+                      )}
+                      {order.payment?.target && (
+                        <Typography variant="caption" color="text.secondary">
+                          PromptPay: {order.payment.targetFormatted || order.payment.target}
+                        </Typography>
+                      )}
+                    </Stack>
                   </TableCell>
 
                   <TableCell>
@@ -250,7 +327,7 @@ export default function AdminOrders() {
 
             {!filtered.length && (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                   <Typography color="text.secondary">
                     {orders.length ? 'ไม่พบรายการตามเงื่อนไขที่เลือก' : 'ยังไม่มีคำสั่งซื้อ'}
                   </Typography>

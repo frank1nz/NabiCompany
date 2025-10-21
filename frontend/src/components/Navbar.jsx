@@ -16,7 +16,8 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../store/authStore';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useCart } from '../store/cartStore';
 
 // 🎨 สีประจำแบรนด์
 const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
@@ -36,6 +37,16 @@ export default function Navbar() {
     user?.verified === true ||
     user?.kycStatus === 'approved' ||
     user?.canOrderViaLine === true;
+
+  const loadCart = useCart((state) => state.loadCart);
+  const cartQuantity = useCart((state) => Number(state.totals.quantity || 0));
+  const cartLastUpdated = useCart((state) => state.lastUpdated);
+
+  useEffect(() => {
+    if (!isLoggedIn || isAdmin) return;
+    if (cartLastUpdated !== null) return;
+    loadCart()?.catch(() => {});
+  }, [isLoggedIn, isAdmin, cartLastUpdated, loadCart]);
 
   // 🔽 สำหรับเมนู admin dropdown
   const [anchorEl, setAnchorEl] = useState(null);
@@ -101,7 +112,11 @@ export default function Navbar() {
             {/* 🧍 สำหรับผู้ใช้ทั่วไป */}
             {isLoggedIn && !isAdmin && (
               <>
-                {isVerified && <NavBtn to="/orders">Orders</NavBtn>}
+                {isVerified && (
+                  <NavBtn to="/orders">
+                    {`Cart${cartQuantity > 0 ? ` (${cartQuantity})` : ''}`}
+                  </NavBtn>
+                )}
                 {selfId && <NavBtn to={`/me/${selfId}`}>Profile</NavBtn>}
               </>
             )}

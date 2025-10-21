@@ -17,6 +17,7 @@ export async function getUserProfile(req, res) {
         phone: doc.profile?.phone,
         lineId: doc.profile?.lineId,
         facebookProfileUrl: doc.profile?.facebookProfileUrl,
+        address: doc.profile?.address,
       },
       ageVerified: doc.ageVerified,
       kycStatus,

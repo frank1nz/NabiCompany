@@ -7,6 +7,7 @@ import RedirectIfAuthenticated from './components/RedirectIfAuthenticated'
 // Public pages
 import Home from './pages/Home'
 import Products from './pages/Products'
+import ProductDetail from './pages/ProductDetail'
 import OurStory from './pages/OurStory'   // 👈 เพิ่ม
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'products', element: <Products /> },
+      { path: 'products/:id', element: <ProductDetail /> },
       { path: 'about', element: <OurStory /> },   // 👈 เพิ่ม route Our Story
 
       {

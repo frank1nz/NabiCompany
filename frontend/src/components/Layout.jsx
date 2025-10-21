@@ -18,8 +18,7 @@ export default function Layout() {
     }
   }, [fetchMe, user]);
 
-  // 🔒 ซ่อน Navbar ในหน้า login/register
-  const hideNavbar = ['/login', '/register'].includes(location.pathname);
+  const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   // ⏳ Loading screen
   if (loading && !user && localStorage.getItem('token')) {
@@ -42,25 +41,26 @@ export default function Layout() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: hideNavbar
+        background: isAuthPage
           ? 'linear-gradient(180deg, #fdfdfd, #fafafa)'
           : 'linear-gradient(180deg, #ffffff, #f9f9f9)',
       }}
     >
       {/* 🌟 Navbar */}
-      {!hideNavbar && <Navbar />}
+      <Navbar />
 
       {/* 🧩 Content Container */}
       <Container
         maxWidth="lg"
         sx={{
-          py: hideNavbar ? { xs: 0, md: 0 } : { xs: 4, md: 6 },
-          px: { xs: 2, md: 3 },
-          minHeight: 'calc(100vh - 80px)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-          animation: 'fadeIn 0.5s ease-in-out',
+        maxWidth: isAuthPage ? 'md' : 'lg',
+        py: isAuthPage ? { xs: 6, md: 8 } : { xs: 4, md: 6 },
+        px: { xs: 2, md: isAuthPage ? 4 : 3 },
+        minHeight: isAuthPage ? 'calc(100vh - 200px)' : 'calc(100vh - 80px)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        animation: 'fadeIn 0.5s ease-in-out',
           '@keyframes fadeIn': {
             from: { opacity: 0 },
             to: { opacity: 1 },
@@ -71,20 +71,18 @@ export default function Layout() {
       </Container>
 
       {/* 🌈 Footer (optional เพิ่มได้ภายหลัง) */}
-      {!hideNavbar && (
-        <Box
-          sx={{
-            mt: 'auto',
-            textAlign: 'center',
-            py: 3,
-            color: '#777',
-            fontSize: 13,
-            borderTop: '1px solid rgba(0,0,0,0.05)',
-          }}
-        >
-          © {new Date().getFullYear()} NABI Spirits — Crafted in Thailand with Passion
-        </Box>
-      )}
+      <Box
+        sx={{
+          mt: 'auto',
+          textAlign: 'center',
+          py: 3,
+          color: '#777',
+          fontSize: 13,
+          borderTop: '1px solid rgba(0,0,0,0.05)',
+        }}
+      >
+        © {new Date().getFullYear()} NABI Spirits — Crafted in Thailand with Passion
+      </Box>
     </Box>
   );
 }

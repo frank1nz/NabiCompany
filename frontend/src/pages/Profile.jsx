@@ -187,6 +187,9 @@ export default function Profile() {
                   </MuiLink>
                 ) : '-'}
               </Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                Address: {p?.address || '-'}
+              </Typography>
               <Typography variant="body2" color="text.secondary">
                 DOB: {p?.dob ? new Date(p.dob).toLocaleDateString() : '-'}
               </Typography>

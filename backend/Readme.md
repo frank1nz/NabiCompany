@@ -1,245 +1,179 @@
-# Nabi Backend – คู่มือทดสอบระบบ
+# Nabi Backend
 
-> เอกสารนี้สรุปทุกเส้นทาง (path) และตัวอย่างคำขอที่ใช้ทดสอบผ่าน Postman/curl ให้ครอบคลุมทั้ง Guest/User/Admin
+Express + MongoDB service for user onboarding (age/KYC), product catalogue, cart checkout with PromptPay, and admin operations.
 
-## 0. เตรียมระบบ
+---
+
+## Quick start
 
 ```bash
+cd backend
 npm install
+npm run dev           # or: npm start
 ```
 
-ตั้งค่า `.env` (ตัวอย่าง)
+Seed the default admin account (optional):
 
-```env
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/nabi_app
-JWT_SECRET=EXPRESSADVANCE_!2025_SECRET
-JWT_EXPIRES=7d
-AGE_MIN=20
-
-UPLOAD_DIR=uploads
-MAX_UPLOAD_MB=8
-ALLOWED_IMAGE_MIME=image/jpeg,image/png,image/webp
-UPLOAD_BASE_URL=http://localhost:5000/uploads
-
-SEED_ADMIN_EMAIL=admin@nabi.local
-SEED_ADMIN_PASSWORD=Admin#123
-SEED_ADMIN_NAME=System Admin
-```
-
-รันเซิร์ฟเวอร์
-
-```bash
-npm run dev
-# หรือ npm start
-```
-
-### บูทแอดมินเริ่มต้น (ถ้าต้องการ)
 ```bash
 npm run seed:admin
 ```
 
----
+### Environment variables (`backend/.env`)
 
-## 1. Public / Guest Routes
-ไม่ต้องใช้ JWT
+| Key | Description |
+| --- | ----------- |
+| `PORT` | API port (default `5000`) |
+| `MONGO_URI` | Mongo connection string |
+| `JWT_SECRET`, `JWT_EXPIRES` | Auth token config |
+| `AGE_MIN` | Minimum age to auto-verify by DOB |
+| `UPLOAD_DIR`, `UPLOAD_BASE_URL` | Local upload storage for KYC & product images |
+| `MAX_UPLOAD_MB`, `ALLOWED_IMAGE_MIME` | Upload validation |
+| `SEED_ADMIN_*` | Credentials for `npm run seed:admin` |
+| `PROMPTPAY_ID` | PromptPay proxy (phone / national ID / bank account) |
+| `PROMPTPAY_PROXY_TYPE` | `auto`, `phone`, `citizen`, `tax`, or `bank` |
+| `PROMPTPAY_BANK_CODE` | 3-digit bank code (required when `*_TYPE=bank`, e.g. `006` for KTB) |
+| `PROMPTPAY_MERCHANT_NAME`, `PROMPTPAY_MERCHANT_CITY` | Data embedded in QR payload |
+| `PROMPTPAY_QR_EXPIRE_MINUTES` | Pending-payment expiry window |
+| `CART_ITEM_MAX_QTY` | Quantity guard per cart line |
 
-| Method | Path | รายละเอียด |
-| ------ | ---- | ----------- |
-| GET | `/` | หน้า welcome พร้อมแนะนำ path อื่น |
-| GET | `/homepage` | สำเนา welcome |
-| GET | `/products` | รายการสินค้า public |
-| GET | `/products/:productId` | ข้อมูลสินค้า public |
-| GET | `/uploads/<filename>` | ไฟล์ที่อัปโหลด (รูป KYC / รูปสินค้า) |
+Example configuration (PromptPay bank account):
 
-ตัวอย่าง curl
-```bash
-curl http://localhost:5000/products
+```env
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/nabi_company
+JWT_SECRET=CHANGE_ME
+JWT_EXPIRES=7d
+AGE_MIN=20
+
+UPLOAD_DIR=uploads
+UPLOAD_BASE_URL=http://localhost:5000/uploads
+MAX_UPLOAD_MB=8
+ALLOWED_IMAGE_MIME=image/jpeg,image/png
+
+SEED_ADMIN_EMAIL=admin@nabi.com
+SEED_ADMIN_PASSWORD=admin123
+SEED_ADMIN_NAME=System Admin
+
+PROMPTPAY_ID=number_prompay
+PROMPTPAY_PROXY_TYPE=bank
+PROMPTPAY_BANK_CODE=006
+PROMPTPAY_MERCHANT_NAME=your_name
+PROMPTPAY_MERCHANT_CITY=BANGKOK
+PROMPTPAY_QR_EXPIRE_MINUTES=30
+
+CART_ITEM_MAX_QTY=50
 ```
 
----
-
-## 2. สมัคร / ล็อกอิน / โปรไฟล์ (Auth)
-
-### 2.1 สมัครสมาชิก (พร้อม KYC)
-`POST http://localhost:5000/register`  
-Body → `form-data`
-
-| Key | Type | Value |
-| --- | ---- | ----- |
-| email | Text | `user01@example.com` |
-| password | Text | `User#12345` |
-| name | Text | `Somchai Jaidee` |
-| dob | Text | `2000-05-20` |
-| phone | Text | `0812345678` |
-| lineId | Text | `somchai123` |
-| facebookProfileUrl | Text | `https://facebook.com/somchai.j` |
-| idCardImage | File | (เลือกไฟล์รูป) |
-| selfieWithId | File | (เลือกไฟล์รูป) |
-
-**ผลลัพธ์**: ได้ `token`, `user` พร้อม `kycStatus = "pending"`
-
-### 2.2 ล็อกอิน
-`POST http://localhost:5000/login`  
-Headers: `Content-Type: application/json`
-```json
-{
-  "email": "user01@example.com",
-  "password": "User#12345"
-}
-```
-รับ `token` → ใช้ใน authorized requests (แทน `<USER_JWT>`)
-
-### 2.3 ดูโปรไฟล์ตนเอง (public base)
-`GET http://localhost:5000/profile`  
-Headers: `Authorization: Bearer <USER_JWT>`
-
-### 2.4 ดูโปรไฟล์เชิงลึก (ผ่าน `/api`)  
-`GET http://localhost:5000/api/users/<userId>`  
-Headers: `Authorization: Bearer <USER_JWT>` (เจ้าของ) หรือ `<ADMIN_JWT>`
+> ⚠️ `/api/orders/line` has been removed. Use the cart + checkout endpoints described below.
 
 ---
 
-## 3. เส้นทางสำหรับ Users (หลัง KYC ผ่าน)
+## Public routes (no token)
 
-### 3.1 สร้างออเดอร์ (LINE Channel)
-`POST http://localhost:5000/api/orders/line`  
-Headers: `Authorization: Bearer <USER_JWT>`, `Content-Type: application/json`
-```json
-{
-  "items": [
-    { "productId": "6730f8cb1f4f96e3b511cabc", "quantity": 2 },
-    { "productId": "6730f8d41f4f96e3b511cad0", "quantity": 1 }
-  ],
-  "note": "Please confirm via LINE tonight",
-  "lineUserId": "Ua1234567890",
-  "lineMessageId": "1234567890123"
-}
+| Method | Path | Notes |
+| ------ | ---- | ----- |
+| GET | `/products` | Public product list (`status=active`, `visibility=public`) |
+| GET | `/products/:id` | Product detail |
+| GET | `/uploads/*` | Static file handler for images |
+
+---
+
+## Authentication & profile
+
+Base path: `/api/auth`
+
+| Method | Path | Notes |
+| ------ | ---- | ----- |
+| POST | `/register` | Multipart form (see payload below). Address is mandatory and stored under `profile.address`. |
+| POST | `/login` | Email/password login |
+| GET | `/me` | Returns profile, KYC snapshot, and verification flags |
+
+**Register payload (multipart/form-data)**
+
 ```
-ℹ️ ต้องเป็น user ที่ `ageVerified=true` และ `kycStatus=approved`
-
-### 3.2 ดูประวัติออเดอร์
-`GET http://localhost:5000/api/orders/me`  
-Headers: `Authorization: Bearer <USER_JWT>`
-
-### 3.3 สร้าง Lead (ตัวอย่างเดิม)
-`POST http://localhost:5000/api/leads`  
-Headers: `Authorization: Bearer <USER_JWT>`  
-(ต้องผ่าน age + KYC)  
-```json
-{
-  "message": "สนใจสินค้าตัวล่าสุด",
-  "preferredChannel": "line"
-}
+email, password, name, dob, phone?, lineId?, facebookProfileUrl?, address
+idCardImage (file), selfieWithId (file)
 ```
 
----
-
-## 4. เส้นทางสำหรับ Admin
-ต้องล็อกอินด้วยบัญชี admin → `POST /login` (ใช้ admin seed) → ได้ `<ADMIN_JWT>`
-
-### 4.1 KYC Workflow
-- รายชื่อที่รออนุมัติ  
-  `GET http://localhost:5000/api/admin/kyc/pending`
-- อนุมัติ KYC  
-  `PUT http://localhost:5000/api/admin/kyc/<userId>/approve`
-- ปฏิเสธ KYC  
-  `PUT http://localhost:5000/api/admin/kyc/<userId>/reject`  
-  Body (optional)  
-  ```json
-  { "note": "ภาพไม่ชัด กรุณาส่งใหม่" }
-  ```
-
-### 4.2 การจัดการสินค้า
-| Method | Path | รายละเอียด |
-| ------ | ---- | ----------- |
-| GET | `/api/admin/products` | รายการสินค้า (รวม hidden/deleted ได้ผ่าน query) |
-| POST | `/api/admin/products` | เพิ่มสินค้า |
-| PUT | `/api/admin/products/:id` | แก้สินค้า (append รูปได้) |
-| PUT | `/api/admin/products/:id/images` | แทนที่รูปทั้งหมด |
-| DELETE | `/api/admin/products/:id` | soft delete |
-| PUT | `/api/admin/products/:id/restore` | กู้ soft delete |
-| DELETE | `/api/admin/products/:id/hard` | hard delete |
-
-ตัวอย่าง POST (Raw JSON)
-
-Body → `form-data`
-| Key | Type | Value |
-| --- | ---- | ----- |
-| name | Text | `Nabi Premium` |
-| description | Text | `Herbal product description` |
-| price | Text | `199` |
-| tags | Text | `herb` |
-| visibility | Text | `public` |
-| status | Text | `active` |
-| images | File | (เลือกไฟล์รูป) |
-
-### 4.3 ตรวจออเดอร์จาก LINE
-- รายการออเดอร์ทั้งหมด  
-  `GET http://localhost:5000/api/admin/orders`
-- ปรับสถานะ/บันทึกหมายเหตุ  
-  `PATCH http://localhost:5000/api/admin/orders/<orderId>`  
-  ```json
-  {
-    "status": "confirmed",
-    "adminNote": "พร้อมจัดส่งภายในวันนี้"
-  }
-  ```
-- สถิติออเดอร์ (นับสถานะ/รายได้รวม)  
-  `GET http://localhost:5000/api/admin/stats/orders`
+All strings are trimmed; password requires ≥ 6 chars. Missing files or address now return HTTP 400 instead of generic 500s.
 
 ---
 
-## 5. เส้นทาง Product สำหรับผู้ใช้ทั่วไป
-| Method | Path | หมายเหตุ |
-| ------ | ---- | -------- |
-| GET | `/products` | Public |
-| GET | `/products/:id` | Public |
-| GET | `/api/products` | Public |
-| GET | `/api/products/:id` | Public |
+## User cart & orders (requires `role=user`, age verified, KYC approved)
+
+Base path: `/api/orders`
+
+| Method | Path | Purpose |
+| ------ | ---- | ------- |
+| GET | `/me` | Order history |
+| GET | `/cart` | Retrieve current cart (auto prunes inactive products) |
+| POST | `/cart/items` | `{ productId, quantity? }` add or merge |
+| PATCH | `/cart/items/:productId` | Adjust quantity |
+| DELETE | `/cart/items/:productId` | Remove a line |
+| DELETE | `/cart` | Clear all |
+| POST | `/cart/checkout` | Creates order, empties cart, returns PromptPay payload |
+
+Checkout response embeds:
+- `order.payment.payload` – EMV QR payload string
+- `order.payment.target` – raw proxy from env
+- `order.payment.targetFormatted` – normalized proxy id (e.g. `0060006624768894`)
+- `order.payment.reference` – short reference used for reconciliation
+
+If PromptPay configuration is invalid, the API now returns HTTP 400 with a descriptive error.
 
 ---
 
-## 6. สคริปต์ทดสอบ (อ้างอิงคำสั่ง curl)
-สามารถแปลงไปใช้ใน Postman โดยเลือกประเภท Body และ Headers ให้ตรงกับตัวอย่าง
+## Admin endpoints (requires `role=admin`)
 
-```bash
-# สมัครสมาชิก (ต้องใช้ form-data ใน Postman)
-curl -X POST http://localhost:5000/register \
-  -F "email=user01@example.com" \
-  -F "password=User#12345" \
-  -F "name=Somchai Jaidee" \
-  -F "dob=2000-05-20" \
-  -F "phone=0812345678" \
-  -F "lineId=somchai123" \
-  -F "facebookProfileUrl=https://facebook.com/somchai.j" \
-  -F "idCardImage=@/absolute/path/idcard.jpg" \
-  -F "selfieWithId=@/absolute/path/selfie.jpg"
+Base paths:
+- `/api/admin/kyc` – approve / reject KYC submissions
+- `/api/admin/orders` – list & update orders (status + payment status + admin note)
+- `/api/admin/products` – full product CRUD (with image uploads)
+- `/api/admin/stats/orders` – aggregate counts & revenue
+- `/api/admin/stats/users` – users by role
 
-# ล็อกอิน (user/admin)
-curl -X POST http://localhost:5000/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user01@example.com","password":"User#12345"}'
-```
+When updating orders, admins can now toggle `paymentStatus` (`pending|paid|failed|expired`). Setting `paid` stamps `payment.paidAt`.
 
 ---
 
-## 7. Scenario แนะนำสำหรับ QA Manual
+## Key models / flows
 
-1. **Guest**: เรียก `/homepage`, `/products` → เห็นสินค้าโดยไม่ต้องล็อกอิน
-2. **Register**: ส่ง form-data ครบถ้วน → ตรวจว่าได้ token, `kycStatus=pending`
-3. **Login**: ล็อกอินซ้ำ → ได้ token เดิม/ใหม่
-4. **Profile**: `GET /profile` และ `/api/users/:id` → ตรวจข้อมูลโปรไฟล์/KYC
-5. **Admin KYC**: ใช้ `<ADMIN_JWT>` → `GET /api/admin/kyc/pending` → `PUT /approve` → ตรวจว่าผู้ใช้กลายเป็น approved
-6. **User Order**: ล็อกอินผู้ใช้เดิม → `POST /api/orders/line` → ตรวจว่า 201 และสรุปยอดถูกต้อง
-7. **User Order History**: `GET /api/orders/me` → เห็นออเดอร์
-8. **Admin Review Order**: `GET /api/admin/orders` → `PATCH /orders/:id` เปลี่ยนเป็น `confirmed`
-9. **Product Admin**: สร้าง/แก้/ลบสินค้า → ตรวจผลผ่าน `/products`
-10. **Negative Case**: ลองเรียกเส้นทางที่ต้องใช้ role โดยไม่มี token หรือ role ไม่ถูกต้อง → ต้องได้ 401/403
+### `User`
+- `profile.address` added (required at registration)
+- `ageVerified` derived from DOB ≥ `AGE_MIN`
+- `kyc.status` drives `isVerified` / cart access
+
+### `Cart`
+- New collection scoped by user with embedded items `{ product, quantity, addedAt }`
+- Cart is auto-created on demand and cleaned up when products disappear
+
+### `Order`
+- `channel` now defaults to `web`
+- Items store price snapshot
+- `shippingAddress` captured at checkout (prefills from profile address if omitted)
+- `payment` block persists PromptPay meta (`payload`, `target`, `targetFormatted`, `reference`, `expiresAt`, etc.)
 
 ---
 
-## 8. หมายเหตุเพิ่มเติม
-- หากต้องการทดสอบ LINE bot ให้ชี้ webhook มายัง backend แล้วเรียก `POST /api/orders/line` ด้วย payload ตามตัวอย่าง
-- สามารถเพิ่ม automated test เพิ่มเติมได้ด้วย Jest + Supertest หากต้องการ CI (`npm i -D jest supertest mongodb-memory-server`)
-- อัปโหลดทั้งหมดถูกเก็บในโฟลเดอร์ `uploads/` ตามค่าจาก `.env`
+## Testing checklist (manual)
+
+1. Register with mandatory address + images → expect `201` and `kycStatus=pending`
+2. Login → fetch `/api/auth/me` → confirm address stored & `canOrderViaLine` renamed behaviour (now cart gating)
+3. Admin approves KYC → user can access `/api/orders/cart`
+4. Add/remove/update cart items → totals update and invalid products are pruned automatically
+5. Checkout → verify JSON returns PromptPay payload, formatted proxy, reference; cart empties
+6. Admin updates order payment status to `paid` → check `payment.paidAt` populated
+7. Product CRUD → ensure new/edited products are visible via `/products` and `/products/:id`
+8. Negative paths: missing files/address during register, using cart without KYC, invalid PromptPay config, etc.
+
+---
+
+## Removed / breaking changes
+
+- Legacy LINE order endpoint (`POST /api/orders/line`) deleted.
+- Root-level auth endpoints (`/register`, `/login`, `/profile`) no longer exposed; always use `/api/auth/*`.
+- Order listing response now includes `shippingAddress` & `payment` details; client code should rely on these fields.
+
+---
+
+Need more automation? The project still uses plain scripts, so adding Jest/Supertest is straightforward if you need CI coverage.
