@@ -361,73 +361,101 @@ export async function checkoutCart(req, res) {
   const orderNoteRaw = (req.body.note ?? "").toString();
   const orderNote = orderNoteRaw.trim().slice(0, 600);
 
+  const respondInsufficientStock = async (productId) => {
+    const latestCart = await buildCartPayload(req.user.id);
+    const affected =
+      (productId && cartPayload.items.find((item) => item.productId === productId)) || null;
+    const productName = affected?.product?.name || "สินค้า";
+    return res.status(409).json({
+      message: `สินค้า "${productName}" มีจำนวนไม่พอ กรุณาตรวจสอบตะกร้าอีกครั้ง`,
+      cart: latestCart,
+    });
+  };
+
+  const runOrderCreation = async (sessionArg) => {
+    const sessionOptions = sessionArg ? { session: sessionArg } : undefined;
+
+    for (const item of orderItems) {
+      const stockResult = await Product.updateOne(
+        {
+          _id: item.product,
+          stock: { $gte: item.quantity },
+          status: "active",
+          visibility: "public",
+          deletedAt: null,
+        },
+        { $inc: { stock: -item.quantity } },
+        sessionOptions
+      );
+
+      if (!stockResult.modifiedCount) {
+        const err = new Error("INSUFFICIENT_STOCK");
+        err.meta = { productId: item.product.toString() };
+        throw err;
+      }
+    }
+
+    const [orderDoc] = await Order.create(
+      [
+        {
+          _id: orderId,
+          user: req.user.id,
+          channel: "web",
+          status: "pending",
+          items: orderItems,
+          note: orderNote || undefined,
+          total,
+          shippingAddress,
+          payment: {
+            method: "promptpay",
+            status: "pending",
+            amount: total,
+            currency: "THB",
+            reference,
+            target: promptPayTargetRaw,
+            targetFormatted: proxyInfo?.proxyId ?? null,
+            payload,
+            expiresAt,
+          },
+        },
+      ],
+      sessionOptions
+    );
+
+    await Cart.updateOne({ _id: cart._id }, { $set: { items: [] } }, sessionOptions);
+    return orderDoc;
+  };
+
+  const isTransactionUnsupportedError = (error) =>
+    error?.code === 20 ||
+    (error?.name === "MongoServerError" &&
+      typeof error?.message === "string" &&
+      error.message.includes("Transaction numbers are only allowed on a replica set member or mongos"));
+
   const session = await mongoose.startSession();
   let createdOrder;
   try {
     await session.withTransaction(async () => {
-      for (const item of orderItems) {
-        const stockResult = await Product.updateOne(
-          {
-            _id: item.product,
-            stock: { $gte: item.quantity },
-            status: "active",
-            visibility: "public",
-            deletedAt: null,
-          },
-          { $inc: { stock: -item.quantity } },
-          { session }
-        );
-
-        if (!stockResult.modifiedCount) {
-          const err = new Error("INSUFFICIENT_STOCK");
-          err.meta = { productId: item.product.toString() };
-          throw err;
-        }
-      }
-
-      const [orderDoc] = await Order.create(
-        [
-          {
-            _id: orderId,
-            user: req.user.id,
-            channel: "web",
-            status: "pending",
-            items: orderItems,
-            note: orderNote || undefined,
-            total,
-            shippingAddress,
-            payment: {
-              method: "promptpay",
-              status: "pending",
-              amount: total,
-              currency: "THB",
-              reference,
-              target: promptPayTargetRaw,
-              targetFormatted: proxyInfo?.proxyId ?? null,
-              payload,
-              expiresAt,
-            },
-          },
-        ],
-        { session }
-      );
-      createdOrder = orderDoc;
-
-      await Cart.updateOne({ _id: cart._id }, { $set: { items: [] } }, { session });
+      createdOrder = await runOrderCreation(session);
     });
   } catch (error) {
     if (error?.message === "INSUFFICIENT_STOCK") {
-      const productId = error?.meta?.productId;
-      const latestCart = await buildCartPayload(req.user.id);
-      const affected =
-        (productId && cartPayload.items.find((item) => item.productId === productId)) || null;
-      const productName = affected?.product?.name || "สินค้า";
-      return res.status(409).json({
-        message: `สินค้า "${productName}" มีจำนวนไม่พอ กรุณาตรวจสอบตะกร้าอีกครั้ง`,
-        cart: latestCart,
-      });
+      return respondInsufficientStock(error?.meta?.productId);
     }
-    throw error;
+
+    if (isTransactionUnsupportedError(error)) {
+      try {
+        // Fallback path for standalone MongoDB instances without transaction support.
+        createdOrder = await runOrderCreation(null);
+      } catch (fallbackError) {
+        if (fallbackError?.message === "INSUFFICIENT_STOCK") {
+          return respondInsufficientStock(fallbackError?.meta?.productId);
+        }
+        throw fallbackError;
+      }
+    } else {
+      throw error;
+    }
   } finally {
     await session.endSession();
   }
