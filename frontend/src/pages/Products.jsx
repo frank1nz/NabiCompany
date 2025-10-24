@@ -66,10 +66,19 @@ export default function Products({
       setFeedback({ type: 'error', message: 'บัญชียังไม่ผ่านการยืนยัน ไม่สามารถสั่งซื้อได้' });
       return;
     }
+    const stock = Number(product.stock ?? 0);
+    if (stock <= 0) {
+      setFeedback({ type: 'error', message: `สินค้า "${product.name}" หมดสต็อก` });
+      return;
+    }
     setAddingId(product._id);
     try {
-      await addItem(product._id, 1);
-      setFeedback({ type: 'success', message: `เพิ่ม "${product.name}" ลงตะกร้าแล้ว` });
+      const data = await addItem(product._id, 1);
+      const notice = data?.notice;
+      setFeedback({
+        type: notice ? 'warning' : 'success',
+        message: notice || `เพิ่ม "${product.name}" ลงตะกร้าแล้ว`,
+      });
     } catch (err) {
       const message =
         err?.response?.data?.message ||
@@ -142,6 +151,11 @@ export default function Products({
         {!loading &&
           list.map((product) => {
             const cover = product.images?.[0];
+            const stock = Number(product.stock ?? 0);
+            const outOfStock = stock <= 0;
+            const lowStock = !outOfStock && stock <= 5;
+            const isBusy = addingId === product._id || cartBusy;
+            const buttonLabel = outOfStock ? 'หมดสต็อก' : isBusy ? 'กำลังเพิ่ม…' : 'เพิ่มลงตะกร้า';
             return (
               <Card
                 key={product._id}
@@ -241,6 +255,12 @@ export default function Products({
                       <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#0f5132' }}>
                         {fmtPrice(product.price)}
                       </Typography>
+                      <Chip
+                        label={outOfStock ? 'หมดสต็อก' : `คงเหลือ ${Math.max(0, stock)} ชิ้น`}
+                        size="small"
+                        color={outOfStock ? 'error' : lowStock ? 'warning' : 'success'}
+                        sx={{ fontWeight: 700 }}
+                      />
                     </Stack>
 
                     {!!product.tags?.length && (
@@ -280,13 +300,13 @@ export default function Products({
                     variant="contained"
                     size="small"
                     onClick={() => handleAddToCart(product)}
-                    disabled={addingId === product._id || cartBusy}
+                    disabled={isBusy || outOfStock}
                     sx={{
                       fontWeight: 700,
                       textTransform: 'none',
                     }}
                   >
-                    {addingId === product._id || cartBusy ? 'กำลังเพิ่ม…' : 'เพิ่มลงตะกร้า'}
+                    {buttonLabel}
                   </Button>
                 </CardActions>
               </Card>
@@ -309,8 +329,13 @@ export default function Products({
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         ContentProps={{
           sx: {
-            bgcolor: feedback.type === 'error' ? 'error.main' : 'success.main',
-            color: '#fff',
+            bgcolor:
+              feedback.type === 'error'
+                ? 'error.main'
+                : feedback.type === 'warning'
+                ? 'warning.main'
+                : 'success.main',
+            color: feedback.type === 'warning' ? '#111' : '#fff',
           },
         }}
       />

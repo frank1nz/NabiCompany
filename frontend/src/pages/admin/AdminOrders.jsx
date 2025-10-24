@@ -1,4 +1,3 @@
-// src/pages/admin/AdminOrders.jsx
 import { useEffect, useMemo, useState } from 'react';
 import {
   Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody,
@@ -29,6 +28,12 @@ const PAYMENT_STYLES = {
 };
 
 const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
+
+const fmtCurrency = (value) =>
+  Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 function StatusChip({ value, styles = STATUS_STYLES, label }) {
   const s = styles[value] || {};
@@ -140,7 +145,7 @@ export default function AdminOrders() {
   }
 
   return (
-    <Paper sx={{ p: 0, overflow: 'hidden' }}>
+    <Paper sx={{ p: 0, overflow: 'hidden' ,width: '80vw' }}>
       {/* Header / Filters */}
       <Toolbar
         sx={{
@@ -184,16 +189,18 @@ export default function AdminOrders() {
       </Box>
 
       <Box sx={{ px: 2, pb: 2 }}>
-        <Table size="small" sx={{ minWidth: 900 }}>
+        <Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>คำสั่งซื้อ</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ลูกค้า</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>สถานะ</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>การชำระเงิน</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ยอดรวม</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: 260 }}>Note</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700, color: BRAND.navy }}>Action</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: '34%' }}>
+                รายละเอียดคำสั่งซื้อ
+              </TableCell>
+              <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: '33%' }}>
+                สถานะ &amp; การชำระเงิน
+              </TableCell>
+              <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: '33%' }}>
+                หมายเหตุ &amp; การจัดการ
+              </TableCell>
             </TableRow>
           </TableHead>
 
@@ -202,7 +209,10 @@ export default function AdminOrders() {
               const id = getId(order);
               const createdAt = order?.createdAt ? new Date(order.createdAt) : null;
               const statusValue = statusDraft[id] ?? order.status;
+              const paymentValue = paymentDraft[id] ?? order.payment?.status ?? 'pending';
               const noteValue = noteDraft[id] ?? order.adminNote ?? '';
+              const userNote =
+                typeof order.note === 'string' && order.note.trim() ? order.note.trim() : '';
               const saving = savingId === id;
 
               return (
@@ -211,66 +221,96 @@ export default function AdminOrders() {
                   hover
                   sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,.02)' }, transition: 'background .15s' }}
                 >
-                  <TableCell>
-                    <Stack spacing={0.5}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        {id}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {createdAt ? createdAt.toLocaleString() : '-'}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-
-                  <TableCell>
-                    <Stack spacing={0.5}>
-                      <Typography variant="body2">{order.user?.name || '-'}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {order.user?.email || '-'}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-
-                  <TableCell>
+                  <TableCell sx={{ width: '34%', verticalAlign: 'top', pr: 2 }}>
                     <Stack spacing={1}>
-                      <StatusChip value={order.status} />
-                      <Select
-                        size="small"
-                        sx={{ minWidth: 160, textTransform: 'capitalize' }}
-                        value={statusValue}
-                        onChange={(e) =>
-                          setStatusDraft((prev) => ({ ...prev, [id]: e.target.value }))
-                        }
-                      >
-                        {STATUS_OPTIONS.map((status) => (
-                          <MenuItem key={status} value={status} sx={{ textTransform: 'capitalize' }}>
-                            {status}
-                          </MenuItem>
-                        ))}
-                      </Select>
+                      <Stack spacing={0.25}>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 700, wordBreak: 'break-word' }}
+                        >
+                          {id}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {createdAt ? createdAt.toLocaleString() : '-'}
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={0.25}>
+                        <Typography variant="body2">{order.user?.name || '-'}</Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ wordBreak: 'break-word' }}
+                        >
+                          {order.user?.email || '-'}
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={0.25}>
+                        <Typography variant="caption" color="text.secondary">
+                          ยอดสุทธิ
+                        </Typography>
+                        <Typography variant="subtitle1" fontWeight={900}>
+                          ฿ {fmtCurrency(order.total)}
+                        </Typography>
+                      </Stack>
                     </Stack>
                   </TableCell>
 
-                  <TableCell>
-                    <Stack spacing={1}>
-                      <StatusChip
-                        value={order.payment?.status ?? 'pending'}
-                        styles={PAYMENT_STYLES}
-                      />
-                      <Select
-                        size="small"
-                        sx={{ minWidth: 160, textTransform: 'capitalize' }}
-                        value={paymentDraft[id] ?? order.payment?.status ?? 'pending'}
-                        onChange={(e) =>
-                          setPaymentDraft((prev) => ({ ...prev, [id]: e.target.value }))
-                        }
-                      >
-                        {PAYMENT_OPTIONS.map((status) => (
-                          <MenuItem key={status} value={status} sx={{ textTransform: 'capitalize' }}>
-                            {status}
-                          </MenuItem>
-                        ))}
-                      </Select>
+                  <TableCell sx={{ width: '33%', verticalAlign: 'top', pr: 2 }}>
+                    <Stack spacing={1.25}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          สถานะคำสั่งซื้อ
+                        </Typography>
+                        <Stack spacing={0.75}>
+                          <StatusChip value={statusValue} />
+                          <Select
+                            size="small"
+                            fullWidth
+                            sx={{ textTransform: 'capitalize', maxWidth: 200 }}
+                            value={statusValue}
+                            onChange={(e) =>
+                              setStatusDraft((prev) => ({ ...prev, [id]: e.target.value }))
+                            }
+                          >
+                            {STATUS_OPTIONS.map((status) => (
+                              <MenuItem
+                                key={status}
+                                value={status}
+                                sx={{ textTransform: 'capitalize' }}
+                              >
+                                {status}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </Stack>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          สถานะการชำระเงิน
+                        </Typography>
+                        <Stack spacing={0.75}>
+                          <StatusChip value={paymentValue} styles={PAYMENT_STYLES} />
+                          <Select
+                            size="small"
+                            fullWidth
+                            sx={{ textTransform: 'capitalize', maxWidth: 200 }}
+                            value={paymentValue}
+                            onChange={(e) =>
+                              setPaymentDraft((prev) => ({ ...prev, [id]: e.target.value }))
+                            }
+                          >
+                            {PAYMENT_OPTIONS.map((status) => (
+                              <MenuItem
+                                key={status}
+                                value={status}
+                                sx={{ textTransform: 'capitalize' }}
+                              >
+                                {status}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </Stack>
+                      </Box>
                       {order.payment?.reference && (
                         <Typography variant="caption" color="text.secondary">
                           REF: {order.payment.reference}
@@ -284,42 +324,68 @@ export default function AdminOrders() {
                     </Stack>
                   </TableCell>
 
-                  <TableCell>
-                    ฿ {Number(order.total || 0).toLocaleString()}
-                  </TableCell>
-
-                  <TableCell>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      multiline
-                      minRows={2}
-                      placeholder="หมายเหตุ"
-                      value={noteValue}
-                      onChange={(e) =>
-                        setNoteDraft((prev) => ({ ...prev, [id]: e.target.value }))
-                      }
-                    />
-                  </TableCell>
-
-                  <TableCell align="right">
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<SaveRoundedIcon />}
-                      onClick={() => handleUpdate(order)}
-                      disabled={!canSave(order) || saving}
-                      sx={{
-                        bgcolor: BRAND.gold,
-                        color: '#111',
-                        fontWeight: 800,
-                        borderRadius: 20,
-                        px: 2,
-                        '&:hover': { bgcolor: '#C6A132' },
-                      }}
-                    >
-                      {saving ? 'กำลังบันทึก…' : 'บันทึก'}
-                    </Button>
+                  <TableCell sx={{ width: '33%', verticalAlign: 'top' }}>
+                    <Stack spacing={1.25}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          หมายเหตุจากลูกค้า
+                        </Typography>
+                        <Box
+                          sx={{
+                            mt: 0.75,
+                            p: userNote ? 1 : 0.75,
+                            bgcolor: userNote ? 'rgba(28,39,56,.04)' : 'rgba(28,39,56,.02)',
+                            borderRadius: 1.5,
+                            border: '1px solid rgba(28,39,56,.08)',
+                            minHeight: 48,
+                            maxHeight: 140,
+                            overflowY: 'auto',
+                            color: userNote ? 'inherit' : 'text.secondary',
+                            fontSize: 13,
+                            lineHeight: 1.5,
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {userNote || 'ไม่มีหมายเหตุจากลูกค้า'}
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          โน้ตสำหรับทีมงาน
+                        </Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          multiline
+                          minRows={3}
+                          maxRows={6}
+                          placeholder="เพิ่มหมายเหตุสำหรับอัปเดตทีม"
+                          value={noteValue}
+                          onChange={(e) =>
+                            setNoteDraft((prev) => ({ ...prev, [id]: e.target.value }))
+                          }
+                        />
+                      </Box>
+                      <Stack direction="row" justifyContent="flex-end">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<SaveRoundedIcon />}
+                          onClick={() => handleUpdate(order)}
+                          disabled={!canSave(order) || saving}
+                          sx={{
+                            bgcolor: BRAND.gold,
+                            color: '#111',
+                            fontWeight: 700,
+                            borderRadius: 999,
+                            px: 2,
+                            '&:hover': { bgcolor: '#C6A132' },
+                          }}
+                        >
+                          {saving ? 'กำลังบันทึก…' : 'บันทึก'}
+                        </Button>
+                      </Stack>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               );
@@ -327,7 +393,7 @@ export default function AdminOrders() {
 
             {!filtered.length && (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
                   <Typography color="text.secondary">
                     {orders.length ? 'ไม่พบรายการตามเงื่อนไขที่เลือก' : 'ยังไม่มีคำสั่งซื้อ'}
                   </Typography>

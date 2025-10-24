@@ -13,6 +13,7 @@ const blank = {
   name: '',
   description: '',
   price: '',
+  stock: 0,
   visibility: 'public',
   status: 'active',
   tags: '',
@@ -41,6 +42,7 @@ export default function EditProductDialog({
         name: product.name || '',
         description: product.description || '',
         price: product.price ?? '',
+        stock: product.stock ?? 0,
         visibility: product.visibility || 'public',
         status: product.status || 'active',
         tags: (product.tags || []).join(', '),
@@ -67,6 +69,12 @@ export default function EditProductDialog({
     return Number.isFinite(n) ? Math.max(0, n) : ''
   }, [form.price])
 
+  const stockNumber = useMemo(() => {
+    const n = Number(form.stock)
+    if (!Number.isFinite(n)) return ''
+    return Math.floor(n)
+  }, [form.stock])
+
   const tagsArray = useMemo(() =>
     form.tags
       .split(',')
@@ -76,9 +84,10 @@ export default function EditProductDialog({
 
   const nameOk = form.name.trim().length >= 2
   const priceOk = priceNumber !== '' && priceNumber >= 0
+  const stockOk = stockNumber !== '' && stockNumber >= 0
   const visibilityOk = VISIBILITY.includes(String(form.visibility))
   const statusOk = STATUS.includes(String(form.status))
-  const canSubmit = nameOk && priceOk && visibilityOk && statusOk && !saving
+  const canSubmit = nameOk && priceOk && stockOk && visibilityOk && statusOk && !saving
 
   // ลบรูปเดิมทีละใบ
   const toggleRemove = (imgId) => {
@@ -92,7 +101,8 @@ export default function EditProductDialog({
       form: {
         ...form,
         price: priceNumber,
-        tags: tagsArray,
+        stock: stockNumber,
+        tags: form.tags,
         visibility: form.visibility,
         status: form.status,
       },
@@ -183,6 +193,18 @@ export default function EditProductDialog({
               }}
             />
 
+            <TextField
+              label="จำนวนคงเหลือ (ชิ้น)"
+              type="number"
+              inputProps={{ min: 0, step: 1 }}
+              value={form.stock}
+              onChange={(e) => setField('stock', e.target.value)}
+              required
+              error={!!String(form.stock) && !stockOk}
+              helperText={!!String(form.stock) && !stockOk ? 'กรุณากรอกจำนวนให้ถูกต้อง' : ' '}
+              sx={{ minWidth: 160 }}
+            />
+  
             <TextField
               select
               label="Visibility"

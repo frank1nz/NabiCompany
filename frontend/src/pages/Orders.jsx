@@ -169,7 +169,13 @@ export default function Orders() {
     setMutatingId(productId);
     setCartMessage({ type: '', text: '' });
     try {
-      await updateItem(productId, nextQty);
+      const stock = Number(item.product?.stock ?? item.availableStock ?? Number.POSITIVE_INFINITY);
+      const desired = Math.max(1, nextQty);
+      const requestQty = Number.isFinite(stock) ? Math.min(desired, stock) : desired;
+      const data = await updateItem(productId, requestQty);
+      if (data?.notice) {
+        setCartMessage({ type: 'warning', text: data.notice });
+      }
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'อัปเดตจำนวนไม่สำเร็จ';
       setCartMessage({ type: 'error', text: message });
@@ -185,7 +191,13 @@ export default function Orders() {
     setMutatingId(productId);
     setCartMessage({ type: '', text: '' });
     try {
-      await updateItem(productId, Number(item.quantity || 0) + 1);
+      const stock = Number(item.product?.stock ?? item.availableStock ?? Number.POSITIVE_INFINITY);
+      const desired = Number(item.quantity || 0) + 1;
+      const requestQty = Number.isFinite(stock) ? Math.min(desired, stock) : desired;
+      const data = await updateItem(productId, requestQty);
+      if (data?.notice) {
+        setCartMessage({ type: 'warning', text: data.notice });
+      }
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'เพิ่มจำนวนไม่สำเร็จ';
       setCartMessage({ type: 'error', text: message });
@@ -205,7 +217,10 @@ export default function Orders() {
     setMutatingId(productId);
     setCartMessage({ type: '', text: '' });
     try {
-      await updateItem(productId, current - 1);
+      const data = await updateItem(productId, current - 1);
+      if (data?.notice) {
+        setCartMessage({ type: 'warning', text: data.notice });
+      }
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'ลดจำนวนไม่สำเร็จ';
       setCartMessage({ type: 'error', text: message });
@@ -273,6 +288,10 @@ export default function Orders() {
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'ไม่สามารถทำรายการได้';
       setCheckoutError(message);
+      if (err?.response?.data?.cart) {
+        setCartState(err.response.data.cart);
+        setCartMessage({ type: 'warning', text: message });
+      }
     } finally {
       setCheckoutLoading(false);
     }
@@ -328,7 +347,16 @@ export default function Orders() {
           </Alert>
         )}
         {!!cartMessage.text && (
-          <Alert severity={cartMessage.type === 'error' ? 'error' : 'success'} sx={{ mb: 2 }}>
+          <Alert
+            severity={
+              cartMessage.type === 'error'
+                ? 'error'
+                : cartMessage.type === 'warning'
+                ? 'warning'
+                : 'success'
+            }
+            sx={{ mb: 2 }}
+          >
             {cartMessage.text}
           </Alert>
         )}
@@ -384,9 +412,21 @@ export default function Orders() {
               cartItems.map((item) => {
                 const productId = getProductKey(item);
                 const quantity = quantities[productId] ?? item.quantity ?? 0;
+                const numericQuantity = Number(quantity) || 0;
                 const unitPrice = Number(item.unitPrice || 0);
                 const lineTotal = Number(item.lineTotal || unitPrice * (item.quantity || 0));
                 const productName = item.product?.name || item.name || 'สินค้า';
+                const stockRaw = Number(item.product?.stock ?? item.availableStock ?? Number.NaN);
+                const hasFiniteStock = Number.isFinite(stockRaw);
+                const availableStock = hasFiniteStock ? Math.max(0, stockRaw) : null;
+                const outOfStock = hasFiniteStock ? availableStock <= 0 : false;
+                const lowStock = hasFiniteStock ? availableStock > 0 && availableStock <= 5 : false;
+                const maxReached =
+                  hasFiniteStock && availableStock !== null ? numericQuantity >= availableStock : false;
+                const incrementDisabled =
+                  mutatingId === productId ||
+                  checkoutLoading ||
+                  (hasFiniteStock && availableStock !== null && numericQuantity >= availableStock);
 
                 return (
                   <TableRow key={productId}>
@@ -395,6 +435,22 @@ export default function Orders() {
                       {item.product?.sku && (
                         <Typography variant="caption" color="text.secondary">
                           SKU: {item.product.sku}
+                        </Typography>
+                      )}
+                      {hasFiniteStock && (
+                        <Typography
+                          variant="caption"
+                          color={
+                            outOfStock ? 'error.main' : lowStock ? 'warning.main' : 'text.secondary'
+                          }
+                          display="block"
+                        >
+                          คงเหลือ {availableStock} ชิ้น
+                        </Typography>
+                      )}
+                      {maxReached && !outOfStock && (
+                        <Typography variant="caption" color="warning.main" display="block">
+                          ถึงจำนวนสูงสุดตามสต็อกแล้ว
                         </Typography>
                       )}
                     </TableCell>
@@ -420,13 +476,18 @@ export default function Orders() {
                             }
                           }}
                           size="small"
-                          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 0 }}
+                          inputProps={{
+                            inputMode: 'numeric',
+                            pattern: '[0-9]*',
+                            min: 0,
+                            max: hasFiniteStock && availableStock !== null ? availableStock : undefined,
+                          }}
                           sx={{ width: 80 }}
                         />
                         <IconButton
                           size="small"
                           onClick={() => handleIncrement(item)}
-                          disabled={mutatingId === productId || checkoutLoading}
+                          disabled={incrementDisabled}
                           aria-label="เพิ่มจำนวน"
                         >
                           <AddRoundedIcon />

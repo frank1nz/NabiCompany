@@ -65,6 +65,7 @@ async function buildCartPayload(userId) {
   const productsById = new Map(products.map((p) => [p._id.toString(), p]));
   const validItems = [];
   const invalidTargets = [];
+  const quantityAdjustments = [];
 
   for (const item of cart.items) {
     const productId = item.product?.toString?.() || String(item.product || "");
@@ -75,9 +76,21 @@ async function buildCartPayload(userId) {
       continue;
     }
 
-    const quantity = clampQuantity(item.quantity);
+    const productObjectId = new mongoose.Types.ObjectId(productId);
+    const availableStock = Math.max(0, Math.floor(Number(product.stock ?? 0)));
+    if (availableStock <= 0) {
+      invalidTargets.push(productObjectId);
+      continue;
+    }
+
+    let quantity = clampQuantity(item.quantity);
+    if (quantity > availableStock) {
+      quantity = availableStock;
+      quantityAdjustments.push({ productId: productObjectId, quantity });
+    }
+
     if (quantity <= 0) {
-      invalidTargets.push(new mongoose.Types.ObjectId(productId));
+      invalidTargets.push(productObjectId);
       continue;
     }
 
@@ -87,6 +100,7 @@ async function buildCartPayload(userId) {
       quantity,
       unitPrice,
       lineTotal: unitPrice * quantity,
+      availableStock,
       product: {
         id: productId,
         name: product.name,
@@ -95,6 +109,7 @@ async function buildCartPayload(userId) {
         images: product.images || [],
         sku: product.sku || null,
         slug: product.slug || null,
+        stock: availableStock,
       },
     });
   }
@@ -104,6 +119,15 @@ async function buildCartPayload(userId) {
       { _id: cart._id },
       { $pull: { items: { product: { $in: invalidTargets } } } }
     );
+  }
+
+  if (quantityAdjustments.length) {
+    for (const adj of quantityAdjustments) {
+      await Cart.updateOne(
+        { _id: cart._id, "items.product": adj.productId },
+        { $set: { "items.$.quantity": adj.quantity } }
+      );
+    }
   }
 
   const totals = validItems.reduce(
@@ -134,6 +158,11 @@ export async function addCartItem(req, res) {
     return res.status(404).json({ message: "Product not available" });
   }
 
+  const availableStock = Math.max(0, Math.floor(Number(product.stock ?? 0)));
+  if (availableStock <= 0) {
+    return res.status(400).json({ message: `สินค้า "${product.name}" หมดสต็อกชั่วคราว` });
+  }
+
   const qty = clampQuantity(quantity || 1);
   if (qty <= 0) {
     return res.status(400).json({ message: "Quantity must be greater than zero" });
@@ -141,15 +170,31 @@ export async function addCartItem(req, res) {
 
   const cart = await ensureCart(req.user.id);
   const existing = cart.items.findIndex((item) => item.product.toString() === productId);
+  let limited = false;
   if (existing >= 0) {
-    cart.items[existing].quantity = clampQuantity(cart.items[existing].quantity + qty);
+    const current = clampQuantity(cart.items[existing].quantity);
+    let desired = clampQuantity(current + qty);
+    if (desired > availableStock) {
+      desired = availableStock;
+      limited = true;
+    }
+    cart.items[existing].quantity = desired;
   } else {
-    cart.items.push({ product: product._id, quantity: qty });
+    let desired = clampQuantity(qty);
+    if (desired > availableStock) {
+      desired = availableStock;
+      limited = true;
+    }
+    cart.items.push({ product: product._id, quantity: desired });
   }
 
   await cart.save();
   const payload = await buildCartPayload(req.user.id);
-  res.json(payload);
+  const response = { ...payload };
+  if (limited) {
+    response.notice = `สินค้า "${product.name}" คงเหลือ ${availableStock} ชิ้น ระบบได้ปรับจำนวนในตะกร้าให้อัตโนมัติ`;
+  }
+  res.json(response);
 }
 
 export async function updateCartItem(req, res) {
@@ -171,15 +216,45 @@ export async function updateCartItem(req, res) {
   }
 
   const qty = clampQuantity(quantity);
+  let notice = "";
+
   if (qty <= 0) {
     cart.items.splice(index, 1);
   } else {
-    cart.items[index].quantity = qty;
+    const product = await Product.findById(productId).lean();
+    const name = product?.name || "สินค้า";
+    const isSellable =
+      product &&
+      product.status === "active" &&
+      product.visibility === "public" &&
+      product.deletedAt == null;
+
+    if (!isSellable) {
+      cart.items.splice(index, 1);
+      notice = `สินค้า "${name}" ไม่พร้อมจำหน่าย ระบบนำออกจากตะกร้าแล้ว`;
+    } else {
+      const availableStock = Math.max(0, Math.floor(Number(product.stock ?? 0)));
+      if (availableStock <= 0) {
+        cart.items.splice(index, 1);
+        notice = `สินค้า "${product.name}" หมดสต็อก ระบบนำออกจากตะกร้าแล้ว`;
+      } else {
+        let desired = qty;
+        if (desired > availableStock) {
+          desired = availableStock;
+          notice = `สินค้า "${product.name}" คงเหลือ ${availableStock} ชิ้น ระบบได้ปรับจำนวนในตะกร้าให้อัตโนมัติ`;
+        }
+        cart.items[index].quantity = desired;
+      }
+    }
   }
 
   await cart.save();
   const payload = await buildCartPayload(req.user.id);
-  res.json(payload);
+  const response = { ...payload };
+  if (notice) {
+    response.notice = notice;
+  }
+  res.json(response);
 }
 
 export async function removeCartItem(req, res) {
@@ -283,30 +358,88 @@ export async function checkoutCart(req, res) {
   }
 
   const expiresAt = new Date(Date.now() + QR_EXPIRE_MINUTES * 60 * 1000);
+  const orderNoteRaw = (req.body.note ?? "").toString();
+  const orderNote = orderNoteRaw.trim().slice(0, 600);
 
-  const order = await Order.create({
-    _id: orderId,
-    user: req.user.id,
-    channel: "web",
-    status: "pending",
-    items: orderItems,
-    note: req.body.note,
-    total,
-    shippingAddress,
-    payment: {
-      method: "promptpay",
-      status: "pending",
-      amount: total,
-      currency: "THB",
-      reference,
-      target: promptPayTargetRaw,
-      targetFormatted: proxyInfo?.proxyId ?? null,
-      payload,
-      expiresAt,
-    },
-  });
+  const session = await mongoose.startSession();
+  let createdOrder;
+  try {
+    await session.withTransaction(async () => {
+      for (const item of orderItems) {
+        const stockResult = await Product.updateOne(
+          {
+            _id: item.product,
+            stock: { $gte: item.quantity },
+            status: "active",
+            visibility: "public",
+            deletedAt: null,
+          },
+          { $inc: { stock: -item.quantity } },
+          { session }
+        );
 
-  await Cart.updateOne({ _id: cart._id }, { $set: { items: [] } });
+        if (!stockResult.modifiedCount) {
+          const err = new Error("INSUFFICIENT_STOCK");
+          err.meta = { productId: item.product.toString() };
+          throw err;
+        }
+      }
+
+      const [orderDoc] = await Order.create(
+        [
+          {
+            _id: orderId,
+            user: req.user.id,
+            channel: "web",
+            status: "pending",
+            items: orderItems,
+            note: orderNote || undefined,
+            total,
+            shippingAddress,
+            payment: {
+              method: "promptpay",
+              status: "pending",
+              amount: total,
+              currency: "THB",
+              reference,
+              target: promptPayTargetRaw,
+              targetFormatted: proxyInfo?.proxyId ?? null,
+              payload,
+              expiresAt,
+            },
+          },
+        ],
+        { session }
+      );
+      createdOrder = orderDoc;
+
+      await Cart.updateOne({ _id: cart._id }, { $set: { items: [] } }, { session });
+    });
+  } catch (error) {
+    if (error?.message === "INSUFFICIENT_STOCK") {
+      const productId = error?.meta?.productId;
+      const latestCart = await buildCartPayload(req.user.id);
+      const affected =
+        (productId && cartPayload.items.find((item) => item.productId === productId)) || null;
+      const productName = affected?.product?.name || "สินค้า";
+      return res.status(409).json({
+        message: `สินค้า "${productName}" มีจำนวนไม่พอ กรุณาตรวจสอบตะกร้าอีกครั้ง`,
+        cart: latestCart,
+      });
+    }
+    throw error;
+  } finally {
+    await session.endSession();
+  }
+
+  const order =
+    createdOrder && typeof createdOrder.toObject === "function"
+      ? createdOrder.toObject()
+      : createdOrder;
+
+  if (!order) {
+    return res.status(500).json({ message: "Failed to create order" });
+  }
 
   res.status(201).json({
     order: {

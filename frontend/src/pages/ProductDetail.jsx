@@ -66,7 +66,8 @@ export default function ProductDetail() {
         if (!alive) return;
         setProduct(data);
         setSelectedImage(data?.images?.[0] ? buildImg(data.images[0]) : '');
-        setQuantity(1);
+        const initialQty = Number(data?.stock ?? 0) > 0 ? 1 : 0;
+        setQuantity(initialQty);
         setError('');
       })
       .catch((err) => {
@@ -97,10 +98,33 @@ export default function ProductDetail() {
     return `฿ ${product.price.toLocaleString(undefined, { minimumFractionDigits: 0 })}`;
   }, [product?.price]);
 
+  const availableStock = Math.max(0, Number(product?.stock ?? 0));
+  const outOfStock = availableStock <= 0;
+  const lowStock = !outOfStock && availableStock <= 5;
+  const maxSelectable = outOfStock ? 0 : Math.min(99, Math.floor(availableStock));
+
+  useEffect(() => {
+    if (!product) return;
+    if (outOfStock) {
+      setQuantity(0);
+    } else {
+      setQuantity((prev) => {
+        if (typeof prev !== 'number' || !Number.isFinite(prev) || prev <= 0) {
+          return 1;
+        }
+        return Math.min(prev, maxSelectable);
+      });
+    }
+  }, [product, outOfStock, maxSelectable]);
+
   const handleQuantityChange = (val) => {
-    const numeric = Number(val);
+    const numeric = Math.floor(Number(val));
     if (!Number.isFinite(numeric)) return;
-    setQuantity(Math.max(1, Math.min(99, Math.floor(numeric))));
+    if (maxSelectable <= 0) {
+      setQuantity(0);
+      return;
+    }
+    setQuantity(Math.max(1, Math.min(maxSelectable, numeric)));
   };
 
   const handleAddToCart = async () => {
@@ -117,13 +141,24 @@ export default function ProductDetail() {
       });
       return;
     }
+    if (outOfStock) {
+      setFeedback({ type: 'error', message: `สินค้า "${product.name}" หมดสต็อก` });
+      return;
+    }
+    if (quantity <= 0) {
+      setFeedback({ type: 'error', message: 'กรุณาเลือกจำนวนที่ต้องการ' });
+      return;
+    }
     setAdding(true);
     setFeedback({ type: '', message: '' });
     try {
-      await addItem(product._id, quantity);
+      const commitQty = Math.max(1, Math.min(quantity, maxSelectable || quantity));
+      const data = await addItem(product._id, commitQty);
+      const notice = data?.notice;
       setFeedback({
-        type: 'success',
-        message: `เพิ่ม "${product.name}" จำนวน ${quantity} ชิ้นลงตะกร้าแล้ว`,
+        type: notice ? 'warning' : 'success',
+        message:
+          notice || `เพิ่ม "${product.name}" จำนวน ${commitQty} ชิ้นลงตะกร้าแล้ว`,
       });
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'เพิ่มสินค้าไม่สำเร็จ';
@@ -263,9 +298,22 @@ export default function ProductDetail() {
                 <Typography variant="h5" fontWeight={900} sx={{ letterSpacing: 0.4, mb: 1 }}>
                   {product.name}
                 </Typography>
-                <Typography variant="h6" fontWeight={800} color="success.dark">
-                  {priceDisplay}
-                </Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                  <Typography variant="h6" fontWeight={800} color="success.dark">
+                    {priceDisplay}
+                  </Typography>
+                  <Chip
+                    label={outOfStock ? 'หมดสต็อก' : `คงเหลือ ${availableStock} ชิ้น`}
+                    size="small"
+                    color={outOfStock ? 'error' : lowStock ? 'warning' : 'success'}
+                    sx={{ fontWeight: 700 }}
+                  />
+                </Stack>
+                {lowStock && !outOfStock && (
+                  <Typography variant="caption" color="warning.main" sx={{ mt: 0.5, display: 'block' }}>
+                    สินค้าคงเหลือน้อย กรุณาชำระเพื่อยืนยันการจอง
+                  </Typography>
+                )}
               </Box>
 
               {tags.length > 0 && (
@@ -294,7 +342,7 @@ export default function ProductDetail() {
                   <IconButton
                     size="small"
                     onClick={() => handleQuantityChange(quantity - 1)}
-                    disabled={quantity <= 1 || adding || cartLoading}
+                    disabled={quantity <= 1 || adding || cartLoading || outOfStock}
                   >
                     <RemoveRoundedIcon />
                   </IconButton>
@@ -303,13 +351,18 @@ export default function ProductDetail() {
                     onChange={(e) => handleQuantityChange(e.target.value)}
                     size="small"
                     sx={{ width: 90 }}
-                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 1, max: 99 }}
-                    disabled={adding}
+                    inputProps={{
+                      inputMode: 'numeric',
+                      pattern: '[0-9]*',
+                      min: outOfStock ? 0 : 1,
+                      max: maxSelectable || undefined,
+                    }}
+                    disabled={adding || outOfStock}
                   />
                   <IconButton
                     size="small"
                     onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={quantity >= 99 || adding || cartLoading}
+                    disabled={outOfStock || adding || cartLoading || quantity >= maxSelectable}
                   >
                     <AddRoundedIcon />
                   </IconButton>
@@ -320,7 +373,7 @@ export default function ProductDetail() {
                     variant="contained"
                     startIcon={<ShoppingCartCheckoutRoundedIcon />}
                     onClick={handleAddToCart}
-                    disabled={adding || cartLoading}
+                    disabled={adding || cartLoading || outOfStock || quantity <= 0}
                     sx={{
                       flexGrow: 1,
                       fontWeight: 800,
@@ -331,7 +384,7 @@ export default function ProductDetail() {
                       '&:hover': { bgcolor: '#C6A132' },
                     }}
                   >
-                    {adding ? 'กำลังเพิ่ม…' : 'เพิ่มลงตะกร้า'}
+                    {outOfStock ? 'สินค้าหมด' : adding || cartLoading ? 'กำลังเพิ่ม…' : 'เพิ่มลงตะกร้า'}
                   </Button>
                   <Button
                     variant="outlined"
@@ -348,7 +401,12 @@ export default function ProductDetail() {
                   variant="body2"
                   sx={{
                     mt: 1,
-                    color: feedback.type === 'error' ? 'error.main' : 'success.main',
+                    color:
+                      feedback.type === 'error'
+                        ? 'error.main'
+                        : feedback.type === 'warning'
+                        ? 'warning.main'
+                        : 'success.main',
                   }}
                 >
                   {feedback.message}

@@ -31,12 +31,12 @@ npm run seed:admin
 | `SEED_ADMIN_*` | Credentials for `npm run seed:admin` |
 | `PROMPTPAY_ID` | PromptPay proxy (phone / national ID / bank account) |
 | `PROMPTPAY_PROXY_TYPE` | `auto`, `phone`, `citizen`, `tax`, or `bank` |
-| `PROMPTPAY_BANK_CODE` | 3-digit bank code (required when `*_TYPE=bank`, e.g. `006` for KTB) |
+| `PROMPTPAY_BANK_CODE` | 3-digit bank code (only when `*_TYPE=bank`, e.g. `006` for KTB) |
 | `PROMPTPAY_MERCHANT_NAME`, `PROMPTPAY_MERCHANT_CITY` | Data embedded in QR payload |
 | `PROMPTPAY_QR_EXPIRE_MINUTES` | Pending-payment expiry window |
 | `CART_ITEM_MAX_QTY` | Quantity guard per cart line |
 
-Example configuration (PromptPay bank account):
+Example configuration (PromptPay phone number):
 
 ```env
 PORT=5000
@@ -54,9 +54,9 @@ SEED_ADMIN_EMAIL=admin@nabi.com
 SEED_ADMIN_PASSWORD=admin123
 SEED_ADMIN_NAME=System Admin
 
-PROMPTPAY_ID=number_prompay
-PROMPTPAY_PROXY_TYPE=bank
-PROMPTPAY_BANK_CODE=006
+PROMPTPAY_ID=your_promtpay_number
+PROMPTPAY_PROXY_TYPE=phone
+# PROMPTPAY_BANK_CODE=006
 PROMPTPAY_MERCHANT_NAME=your_name
 PROMPTPAY_MERCHANT_CITY=BANGKOK
 PROMPTPAY_QR_EXPIRE_MINUTES=30
