@@ -12,7 +12,8 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { login } from '../lib/auth';
 import { useAuth } from '../store/authStore';
 
-const BRAND = { gold: '#D4AF37' };
+
+const BRAND = { gold: '#D4AF37', blue1: '#5DB3FF', blue2: '#257CFF' };
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -80,111 +81,186 @@ export default function Login() {
           'radial-gradient(1200px 600px at 20% -10%, rgba(36,56,79,.06), transparent 40%), radial-gradient(1000px 500px at 120% 110%, rgba(212,175,55,.08), transparent 45%)',
       }}
     >
-      <Container maxWidth="sm" disableGutters>
+      <Container maxWidth="md" disableGutters>
+        {/* Card สองฝั่ง */}
         <Paper
-          component="form"
-          onSubmit={onSubmit}
           elevation={0}
           sx={{
-            p: { xs: 3, md: 4 },
-            borderRadius: 4,
+            borderRadius: 5,
+            overflow: 'hidden',
             border: '1px solid rgba(0,0,0,.06)',
-            boxShadow: '0 12px 28px rgba(0,0,0,.06)',
-            bgcolor: '#fff',
+            boxShadow: '0 16px 40px rgba(0,0,0,.08)',
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1.1fr 1fr' },
           }}
         >
-          <Stack spacing={2.5}>
-            <Box>
-              <Typography variant="h5" fontWeight={900}>เข้าสู่ระบบ</Typography>
-              <Typography variant="body2" color="text.secondary">
-                ยินดีต้อนรับกลับ — เข้าสู่ระบบเพื่อสั่งซื้อและติดตามคำสั่งซื้อ
-              </Typography>
-            </Box>
-
-            {error && (
-              <Alert severity="error" tabIndex={-1} ref={alertRef}>
-                {error}
-              </Alert>
-            )}
-
-            <TextField
-              label="อีเมล"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              error={!!email && !emailOk}
-              helperText={email && !emailOk ? 'รูปแบบอีเมลไม่ถูกต้อง' : ' '}
-              autoComplete="email"
-              disabled={loading}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailOutlined fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            <TextField
-              label="รหัสผ่าน"
-              type={showPw ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              error={!!password && !pwOk}
-              helperText={password && !pwOk ? 'อย่างน้อย 6 ตัวอักษร' : ' '}
-              autoComplete="current-password"
-              disabled={loading}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockOutlined fontSize="small" />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPw((s) => !s)}
-                      edge="end"
-                      aria-label={showPw ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
-                    >
-                      {showPw ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={!canSubmit}
+          {/* แผงซ้าย: พื้นหลังไล่เฉด + โลโก้ */}
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              p: 4,
+              background: `linear-gradient(180deg, ${BRAND.blue1} 0%, ${BRAND.blue2} 100%)`,
+            }}
+          >
+            {/* คลื่นบาง ๆ */}
+            <Box
               sx={{
-                py: 1.2,
-                fontWeight: 900,
-                bgcolor: BRAND.gold,
-                color: '#111',
-                '&:hover': { bgcolor: '#C6A132' },
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'radial-gradient(65% 80% at 30% 20%, rgba(255,255,255,.25) 0%, rgba(255,255,255,0) 60%), radial-gradient(70% 90% at 80% 0%, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 55%)',
               }}
-            >
-              {loading ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
-            </Button>
+            />
+            <Stack alignItems="center" zIndex={1} spacing={2}>
+              {/* โลโก้ / อักษรย่อ */}
+              <Box
+                sx={{
+                  width: 72, height: 72, borderRadius: 2,
+                  bgcolor: 'rgba(255,255,255,.2)',
+                  display: 'grid', placeItems: 'center',
+                  backdropFilter: 'blur(2px)',
+                }}
+              >
+                <Typography variant="h4" fontWeight={900} color="#fff">🍾</Typography>
+              </Box>
+              <Typography variant="h6" fontWeight={800} color="#fff" letterSpacing={1}>
+                NABI SPIRITS
+              </Typography>
+              <Typography variant="caption" color="rgba(255,255,255,.85)" textAlign="center" sx={{ maxWidth: 280 }}>
+                ทุกหยดที่รินออกจากขวด คือรสชาติของแผ่นดินไทย กลิ่นหอมของข้าวและผลไม้ท้องถิ่น ที่ผสมผสานด้วยหัวใจของผู้คนในชุมชน
+              </Typography>
+            </Stack>
+          </Box>
 
-            <Divider flexItem />
+          {/* ฝั่งขวา: ฟอร์ม */}
+          <Box component="form" onSubmit={onSubmit} sx={{ p: { xs: 3, md: 5 }, bgcolor: '#fff' }}>
+            <Stack spacing={2.5}>
+              <Box>
+                <Typography variant="h4" fontWeight={900} color="#2B4A73" sx={{ mb: 0.5 }}>
+                  Welcome
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Login in to your account to continue
+                </Typography>
+              </Box>
 
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <MuiLink component={Link} to="/forgot-password" underline="hover">
-                ลืมรหัสผ่าน?
-              </MuiLink>
-              <Typography variant="body2" color="text.secondary">
-                ยังไม่มีบัญชี?{' '}
-                <MuiLink component={Link} to="/register" underline="hover" sx={{ color: BRAND.gold, fontWeight: 800 }}>
-                  สมัครสมาชิก
+              {error && (
+                <Alert severity="error" tabIndex={-1} ref={alertRef}>
+                  {error}
+                </Alert>
+              )}
+
+              
+              <TextField
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                error={!!email && !emailOk}
+                helperText={email && !emailOk ? 'รูปแบบอีเมลไม่ถูกต้อง' : ' '}
+                autoComplete="email"
+                disabled={loading}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailOutlined fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 999,
+                    bgcolor: '#EAF3FF',
+                    '& fieldset': { borderColor: 'transparent' },
+                    '&:hover fieldset': { borderColor: 'transparent' },
+                    '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
+                    px: 1,
+                  },
+                }}
+              />
+
+              <TextField
+                label="Password"
+                type={showPw ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                error={!!password && !pwOk}
+                helperText={password && !pwOk ? 'อย่างน้อย 6 ตัวอักษร' : ' '}
+                autoComplete="current-password"
+                disabled={loading}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockOutlined fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPw((s) => !s)}
+                        edge="end"
+                        aria-label={showPw ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                      >
+                        {showPw ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 999,
+                    bgcolor: '#EAF3FF',
+                    '& fieldset': { borderColor: 'transparent' },
+                    '&:hover fieldset': { borderColor: 'transparent' },
+                    '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
+                    px: 1,
+                  },
+                }}
+              />
+
+              <Stack direction="row" justifyContent="flex-end" sx={{ mt: -1 }}>
+                <MuiLink component={Link} to="/forgot-password" underline="hover" color="text.secondary">
+                  forgot your password?
+                </MuiLink>
+              </Stack>
+
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!canSubmit}
+                fullWidth
+                sx={{
+                  py: 1.2,
+                  fontWeight: 900,
+                  borderRadius: 999,
+                  textTransform: 'none',
+                  width: 200,
+                  alignSelf: 'center',
+                  bgcolor: '#2F7BFF',
+                  boxShadow: '0 8px 16px rgba(47,123,255,.25)',
+                  '&:hover': { bgcolor: '#1F6BEE' },
+                }}
+              >
+                {loading ? 'กำลังเข้าสู่ระบบ…' : 'LOG IN'}
+              </Button>
+
+              <Divider flexItem sx={{ my: 1 }} />
+
+              <Typography variant="body2" color="text.secondary" textAlign="center">
+                Don’t have an account?{' '}
+                <MuiLink component={Link} to="/register" underline="hover" sx={{ fontWeight: 800 }}>
+                  Sign Up
                 </MuiLink>
               </Typography>
             </Stack>
-          </Stack>
+          </Box>
         </Paper>
       </Container>
     </Box>
