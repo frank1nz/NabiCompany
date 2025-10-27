@@ -1,85 +1,115 @@
-# Nabi Frontend (React + Vite)
+# Nabi Frontend
 
-แดชบอร์ดฝั่งลูกค้ากับแอดมินที่เชื่อมต่อกับ Nabi Backend เพื่อแสดงสินค้า, ยืนยันตัวตนผู้ใช้ (KYC) และจัดการคำสั่งซื้อผ่าน LINE
+React 19 + Vite client for the Nabi platform. Handles public catalogue browsing, user onboarding, KYC workflow, cart checkout with PromptPay QR, and admin tools.
 
-## 1. เตรียมระบบ
+---
+
+## Quick start
 
 ```bash
+# in another terminal the backend should already be running
 cd frontend
 npm install
+npm run dev   # http://localhost:5173 by default
 ```
 
-### Environment variables
-สร้างไฟล์ `.env` ในโฟลเดอร์ `frontend` (มีตัวอย่างใน repo แล้ว)
+### Environment (`frontend/.env`)
 
 ```env
 VITE_API_BASE=http://localhost:5000/api
 VITE_UPLOAD_BASE=http://localhost:5000
 ```
 
-> `VITE_API_BASE` ต้องชี้ไปที่ prefix `/api` ของ backend เสมอ  
-> `VITE_UPLOAD_BASE` ใช้แสดงรูปจากโฟลเดอร์ uploads ที่ backend ให้บริการ
-
-## 2. คำสั่งหลัก
-
-```bash
-npm run dev      # เปิด Vite dev server (default http://localhost:5173)
-npm run build    # สร้างไฟล์ production ในโฟลเดอร์ dist/
-npm run preview  # เสิร์ฟผล build เพื่อทดสอบแบบ production
-npm run lint     # ตรวจโค้ดด้วย ESLint
-```
-
-## 3. Routing & Guards
-การควบคุมเส้นทางถูกประกาศใน `src/routes.jsx`
-
-| Path | บทบาท | รายละเอียด |
-| ---- | ------ | ----------- |
-| `/` | ทุกคน | หน้า Home แสดงสินค้าส่วนหนึ่ง |
-| `/products` | ทุกคน | ดูสินค้าสาธารณะทั้งหมด |
-| `/register` | guest | สร้างบัญชี + อัปโหลดเอกสาร KYC (ถ้ามี token จะถูก redirect ไป `/status`) |
-| `/login` | guest | ล็อกอิน (ถ้ามี token จะถูก redirect ไป `/status`) |
-| `/orders` | user | สร้างคำสั่งซื้อ LINE (ต้องผ่าน KYC) และดูประวัติ |
-| `/me/:id` | user, admin | ดูโปรไฟล์ (มี document link) |
-| `/admin/kyc` | admin | รายชื่อผู้ใช้ที่รออนุมัติ/ปฏิเสธ |
-| `/admin/orders` | admin | ตรวจสอบคำสั่งซื้อและปรับสถานะ |
-| `/admin/products` | admin | จัดการสินค้า (เพิ่ม/เปลี่ยนสถานะ/soft delete) |
-
-### Middleware ฝั่ง client
-- `RequireAuth` ตรวจว่า route นั้นต้องมี token + บทบาทที่ถูกต้อง ไม่งั้น redirect ไป `/`
-- `RequireVerified` ใช้ทับซ้อนสำหรับหน้า orders (ต้องผ่าน age/KYC)
-- `RedirectIfAuthenticated` ป้องกันผู้ที่ล็อกอินแล้วไม่ให้ย้อนกลับหน้า login/register
-
-## 4. Authentication flow
-1. ผู้ใช้สมัครผ่าน `/register` → เมื่อส่งข้อมูลสำเร็จระบบจะพาไปหน้า `/login`
-2. ล็อกอินสำเร็จ → ระบบบันทึก token, ดึงข้อมูล `/auth/me` และ redirect ไป `/status` ทันที
-3. ใน navbar จะแสดงเมนูตามบทบาท (`/admin/*` แสดงเฉพาะ admin)
-4. เมื่อ user ผ่าน KYC (`isVerified` → true) จะเห็นปุ่ม Orders และสามารถสร้างคำสั่งซื้อได้
-5. ปุ่ม Logout ใน navbar จะเคลียร์ token และพากลับหน้า `/login`
-
-## 5. โค้ดที่เกี่ยวข้อง
-| ไฟล์ | หน้าที่ |
-| ---- | ------- |
-| `src/store/authStore.js` | จัดการ token, user, การดึงข้อมูล `/auth/me` ด้วย Zustand |
-| `src/components/Layout.jsx` | โหลดข้อมูล user ทันทีเมื่อมี token |
-| `src/components/Navbar.jsx` | เมนูนำทางพร้อมแสดง token state |
-| `src/pages/Orders.jsx` | ฟอร์มสร้างคำสั่งซื้อ + รายการคำสั่งซื้อของฉัน |
-| `src/pages/admin/AdminOrders.jsx` | ตารางจัดการคำสั่งซื้อสำหรับ admin |
-| `src/pages/admin/AdminProduct.jsx` | CRUD สินค้าแบบเบื้องต้น |
-| `src/pages/admin/AdminKyc.jsx` | อนุมัติ / ปฏิเสธ KYC |
-
-## 6. เชื่อมต่อ Backend
-ให้ backend ทำงานพร้อมกัน (default port 5000)  
-Frontend จะยิงไปที่ `http://localhost:5000/api/*` และเรียกไฟล์รูปที่ `http://localhost:5000/uploads/*`
-
-ตรวจสอบว่ามีบัญชี admin seed หรือสร้างเองด้วยสคริปต์ `npm run seed:admin` ในโปรเจ็กต์ backend
-
-## 7. การทดสอบแนะนำ (Manual)
-1. เปิด backend + frontend (`npm run dev`)  
-2. สมัครสมาชิกใหม่ → ต้องถูกส่งไป `/login` ทันที → ล็อกอิน → ถูกพาไป `/status` (หน้ารถ guard)
-3. ใช้ admin ล็อกอิน → `/status` → เปลี่ยน URL ไป `/admin/kyc` เพื่ออนุมัติผู้ใช้ → ตรวจ `/admin/orders` และ `/admin/products`
-4. กลับไป user → ตรวจว่าปุ่ม Orders ปรากฏหลัง KYC และสามารถสร้างคำสั่งซื้อได้
-5. ลองเข้าหน้า `/login` ขณะล็อกอินอยู่ → ระบบควรพาออกไป `/status` เพื่อป้องกันการแสดงหน้าซ้ำ
+- `VITE_API_BASE` must point to the backend `/api` prefix.
+- `VITE_UPLOAD_BASE` is used to resolve product/KYC images served from the backend static `/uploads`.
+- Backend must be reachable at the base URL above (default `http://localhost:5000` with `npm run dev` in `backend/`).
 
 ---
 
-หากต้องการปรับแต่งหรือเพิ่มฟีเจอร์อื่นๆ (เช่น code-splitting ลด bundle หรือเพิ่ม unit test) สามารถใช้พื้นฐานนี้ต่อยอดได้ทันที
+## Scripts
+
+| Command | Description |
+| ------- | ----------- |
+| `npm run dev` | Vite dev server with HMR |
+| `npm run build` | Production bundle in `dist/` |
+| `npm run preview` | Serve the built assets locally (assumes backend is still reachable) |
+| `npm run lint` | ESLint (flat config) |
+
+---
+
+## Routing overview
+
+Routes are declared in `src/routes.jsx` and rendered inside `src/components/Layout.jsx`.
+
+| Path | Guard | Notes |
+| ---- | ----- | ----- |
+| `/` | public | Home hero + featured products |
+| `/products` | public | Catalogue grid |
+| `/products/:id` | public | **New** detail page with gallery, price, description, and add-to-cart |
+| `/about` | public | “Our Story” page |
+| `/login`, `/register` | guest-only (redirect when already authenticated) |
+| `/orders` | `RequireAuth` + `RequireVerified` | Cart management, checkout, PromptPay QR, order history |
+| `/me/:id` | `RequireAuth` | Profile + KYC documents |
+| `/admin/kyc` | `RequireAuth` admin | KYC approval |
+| `/admin/orders` | `RequireAuth` admin | Manage order + payment status |
+| `/admin/products` | `RequireAuth` admin | CRUD for catalogue |
+
+### Guards & shared components
+
+- `RequireAuth` ensures a valid token + role before showing children.
+- `RequireVerified` restricts access to verified users (age + KYC approved).
+- `RedirectIfAuthenticated` keeps logged-in users away from auth pages.
+- `Layout` now always renders the navbar (even on login/register) so navigation is never hidden.
+- `Navbar` reads the cart store to show live item counts and exposes admin menu items when appropriate.
+
+---
+
+## Data stores & API helpers
+
+- `src/store/authStore.js` – Zustand store for auth state. Persists token, loads `/auth/me`, resets cart store on logout.
+- `src/store/cartStore.js` – Zustand store backing the web cart (load/add/update/remove/clear).
+- `src/lib/auth.js`, `src/lib/orders.js`, `src/lib/products.js` – Axios wrappers for backend endpoints.
+- `src/components/PromptPayQr.jsx` – Renders PromptPay QR images from EMV payloads using the `qrcode` package.
+
+---
+
+## Feature highlights
+
+- **Catalog experience**
+  - Product cards deep-link to `/products/:id`.
+  - Detail page includes thumbnail gallery, quantity selector, add-to-cart CTA, and fallback handling for missing images.
+- **Cart & checkout**
+  - Orders page shows live cart table with quantity controls, notes, and address capture.
+  - Checkout returns PromptPay payload, raw proxy, and formatted proxy; UI displays all values with copy buttons.
+- **PromptPay integration**
+  - Uses backend-supplied metadata; errors show human-readable toast messages when misconfigured.
+- **Admin workflow**
+  - Orders dashboard can change both order status and payment status (`pending/paid/failed/expired`).
+  - Payment reference + proxy appear in the table for reconciliation.
+- **UX polish**
+  - Login/Register retain nav access, display friendly validation, and leverage common layout transitions.
+  - Snackbar feedback on product listing when adding items to cart.
+
+---
+
+## Testing checklist (manual)
+
+1. Browse `/products` → open a product → confirm details load and cart additions work.
+2. Register a new user (address now required) → login → inspect profile.
+3. Attempt to add to cart with unverified user → expect guard error.
+4. Admin approves KYC → user gains access to `/orders`.
+5. Add varied cart items → adjust quantities, delete lines, clear cart.
+6. Checkout → verify QR code renders and promptpay values match backend config.
+7. Admin updates payment status to `paid` → confirm badge + timestamp change client-side.
+8. Logout → token and cart state should clear; login/register routes become accessible again.
+
+---
+
+## Dependency notes
+
+- React 19, Vite 7, MUI v7
+- `zustand` for lightweight stores
+- `qrcode` for client-side PromptPay QR rendering
+- No CSS framework lock-in; components are styled with MUI’s system and emotion.
+
+Happy hacking! Feel free to extend with additional pages, code-splitting, or automated tests as needed.

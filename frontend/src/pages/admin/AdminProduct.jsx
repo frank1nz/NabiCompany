@@ -24,12 +24,23 @@ const initialForm = {
   name: '',
   description: '',
   price: '',
+  stock: '',
   visibility: 'public',
   status: 'active',
   tags: '',
 };
 
 const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
+
+const normalizeTagsInput = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((t) => String(t).trim()).filter(Boolean);
+  }
+  return String(value || '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+};
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -92,12 +103,10 @@ export default function AdminProducts() {
       name: form.name.trim(),
       description: form.description.trim(),
       price: Number(form.price) || 0,
+      stock: Math.max(0, Math.floor(Number(form.stock) || 0)),
       visibility: form.visibility,
       status: form.status,
-      tags: form.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: normalizeTagsInput(form.tags),
     };
     if (!payload.name) {
       setSaving(false);
@@ -111,6 +120,7 @@ export default function AdminProducts() {
         fd.append('name', payload.name);
         fd.append('description', payload.description);
         fd.append('price', String(payload.price));
+        fd.append('stock', String(payload.stock));
         fd.append('visibility', payload.visibility);
         fd.append('status', payload.status);
         payload.tags.forEach((t) => fd.append('tags[]', t));
@@ -149,12 +159,10 @@ export default function AdminProducts() {
       name: form.name.trim(),
       description: form.description.trim(),
       price: Number(form.price) || 0,
+      stock: Math.max(0, Math.floor(Number(form.stock) || 0)),
       visibility: form.visibility,
       status: form.status,
-      tags: form.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: normalizeTagsInput(form.tags),
     };
     if (!payload.name) {
       setSaving(false);
@@ -168,6 +176,7 @@ export default function AdminProducts() {
         fd.append('name', payload.name);
         fd.append('description', payload.description);
         fd.append('price', String(payload.price));
+        fd.append('stock', String(payload.stock));
         fd.append('visibility', payload.visibility);
         fd.append('status', payload.status);
         payload.tags.forEach((t) => fd.append('tags[]', t));

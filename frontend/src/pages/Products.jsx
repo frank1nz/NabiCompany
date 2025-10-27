@@ -2,9 +2,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Paper, Typography, Card, CardContent, CardMedia,
-  Chip, Stack, Box, CardActionArea, Skeleton, Alert
+  Chip, Stack, Box, CardActionArea, CardActions, Button, Skeleton, Alert, Snackbar,
 } from '@mui/material';
 import { fetchPublicProducts } from '../lib/products';
+import { useAuth } from '../store/authStore';
+import { useCart } from '../store/cartStore';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const uploadBase = import.meta.env.VITE_UPLOAD_BASE;
 const imgSrc = (path) => (path?.startsWith?.('http') ? path : `${uploadBase}/${path}`);
@@ -17,6 +20,18 @@ export default function Products({
   const [items, setItems]   = useState([]);
   const [loading, setLoad]  = useState(true);
   const [error, setError]   = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const addItem = useCart((state) => state.addItem);
+  const cartBusy = useCart((state) => state.loading);
+  const [addingId, setAddingId] = useState('');
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
+
+  const isLoggedIn = !!user;
+  const canUseCart =
+    user?.role === 'user' &&
+    (user?.isVerified || user?.kycStatus === 'approved' || user?.canOrderViaLine === true);
 
   useEffect(() => {
     setLoad(true);
@@ -41,6 +56,41 @@ export default function Products({
     typeof n === 'number'
       ? `฿ ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
       : '-';
+
+  const handleAddToCart = async (product) => {
+    if (!isLoggedIn) {
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+    if (!canUseCart) {
+      setFeedback({ type: 'error', message: 'บัญชียังไม่ผ่านการยืนยัน ไม่สามารถสั่งซื้อได้' });
+      return;
+    }
+    const stock = Number(product.stock ?? 0);
+    if (stock <= 0) {
+      setFeedback({ type: 'error', message: `สินค้า "${product.name}" หมดสต็อก` });
+      return;
+    }
+    setAddingId(product._id);
+    try {
+      const data = await addItem(product._id, 1);
+      const notice = data?.notice;
+      setFeedback({
+        type: notice ? 'warning' : 'success',
+        message: notice || `เพิ่ม "${product.name}" ลงตะกร้าแล้ว`,
+      });
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'ไม่สามารถเพิ่มสินค้าได้';
+      setFeedback({ type: 'error', message });
+    } finally {
+      setAddingId('');
+    }
+  };
+
+  const handleCloseFeedback = () => setFeedback({ type: '', message: '' });
 
   return (
     <Paper
@@ -101,6 +151,11 @@ export default function Products({
         {!loading &&
           list.map((product) => {
             const cover = product.images?.[0];
+            const stock = Number(product.stock ?? 0);
+            const outOfStock = stock <= 0;
+            const lowStock = !outOfStock && stock <= 5;
+            const isBusy = addingId === product._id || cartBusy;
+            const buttonLabel = outOfStock ? 'หมดสต็อก' : isBusy ? 'กำลังเพิ่ม…' : 'เพิ่มลงตะกร้า';
             return (
               <Card
                 key={product._id}
@@ -119,11 +174,7 @@ export default function Products({
                   },
                 }}
               >
-                <CardActionArea
-                  onClick={() => {
-                    // ถ้ามีหน้า detail ในอนาคต: navigate(`/products/${product._id}`)
-                  }}
-                >
+                <CardActionArea onClick={() => navigate(`/products/${product._id}`)}>
                   {/* รูปอัตราส่วนคงที่ (16:10) */}
                   <Box sx={{ position: 'relative', width: '100%', pt: '62.5%' }}>
                     {cover ? (
@@ -204,6 +255,12 @@ export default function Products({
                       <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#0f5132' }}>
                         {fmtPrice(product.price)}
                       </Typography>
+                      <Chip
+                        label={outOfStock ? 'หมดสต็อก' : `คงเหลือ ${Math.max(0, stock)} ชิ้น`}
+                        size="small"
+                        color={outOfStock ? 'error' : lowStock ? 'warning' : 'success'}
+                        sx={{ fontWeight: 700 }}
+                      />
                     </Stack>
 
                     {!!product.tags?.length && (
@@ -228,6 +285,30 @@ export default function Products({
                     )}
                   </CardContent>
                 </CardActionArea>
+
+                <CardActions
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    pt: 0,
+                    mt: 'auto',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => handleAddToCart(product)}
+                    disabled={isBusy || outOfStock}
+                    sx={{
+                      fontWeight: 700,
+                      textTransform: 'none',
+                    }}
+                  >
+                    {buttonLabel}
+                  </Button>
+                </CardActions>
               </Card>
             );
           })}
@@ -239,6 +320,25 @@ export default function Products({
           </Box>
         )}
       </Box>
+
+      <Snackbar
+        open={!!feedback.message}
+        autoHideDuration={5000}
+        onClose={handleCloseFeedback}
+        message={feedback.message}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        ContentProps={{
+          sx: {
+            bgcolor:
+              feedback.type === 'error'
+                ? 'error.main'
+                : feedback.type === 'warning'
+                ? 'warning.main'
+                : 'success.main',
+            color: feedback.type === 'warning' ? '#111' : '#fff',
+          },
+        }}
+      />
     </Paper>
   );
 }

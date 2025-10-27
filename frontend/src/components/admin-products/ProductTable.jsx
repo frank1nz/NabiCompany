@@ -16,11 +16,12 @@ const BRAND = {
 export default function ProductTable({ products = [], onToggleStatus, onEdit, onAskDelete }) {
   return (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
-      <Table size="small" sx={{ minWidth: 800 }}>
+      <Table size="small" sx={{ minWidth: 940 }}>
         <TableHead sx={{ bgcolor: 'rgba(28,39,56,0.04)' }}>
           <TableRow>
             <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ชื่อ</TableCell>
             <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ราคา</TableCell>
+            <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>คงเหลือ</TableCell>
             <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>สถานะ</TableCell>
             <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>Visibility</TableCell>
             <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>Tags</TableCell>
@@ -32,6 +33,9 @@ export default function ProductTable({ products = [], onToggleStatus, onEdit, on
           {products.map((product) => {
             const isActive = product.status === 'active';
             const isDeleted = Boolean(product.deletedAt);
+            const stock = Number(product.stock ?? 0);
+            const outOfStock = stock <= 0;
+            const lowStock = !outOfStock && stock <= 5;
 
             return (
               <TableRow
@@ -45,6 +49,22 @@ export default function ProductTable({ products = [], onToggleStatus, onEdit, on
                 <TableCell sx={{ fontWeight: 600 }}>{product.name}</TableCell>
                 <TableCell sx={{ color: 'text.secondary' }}>
                   ฿ {Number(product.price || 0).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={`${Math.max(0, stock)} ชิ้น`}
+                    size="small"
+                    sx={{
+                      fontWeight: 700,
+                      color: outOfStock ? '#fff' : lowStock ? '#8a6d3b' : '#134e4a',
+                      bgcolor: outOfStock
+                        ? '#d32f2f'
+                        : lowStock
+                        ? 'rgba(212,175,55,0.2)'
+                        : 'rgba(19,78,74,0.12)',
+                      border: '1px solid rgba(0,0,0,0.08)',
+                    }}
+                  />
                 </TableCell>
                 <TableCell>
                   <Chip
@@ -156,7 +176,7 @@ export default function ProductTable({ products = [], onToggleStatus, onEdit, on
 
           {!products.length && (
             <TableRow>
-              <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+              <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                 <Typography color="text.secondary">ยังไม่มีสินค้า</Typography>
               </TableCell>
             </TableRow>

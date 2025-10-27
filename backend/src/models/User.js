@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema({
     dob:  { type: Date, required: true },
     phone: String,
     lineId: String,
-    facebookProfileUrl: String
+    facebookProfileUrl: String,
+    address: String,
   },
 
   ageVerified: { type: Boolean, default: false }, // คำนวณจาก dob >= AGE_MIN

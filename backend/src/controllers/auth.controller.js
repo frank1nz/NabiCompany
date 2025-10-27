@@ -9,9 +9,36 @@ function redirectBase(role) {
   return role === "admin" ? "/admin" : "/app";
 }
 
+
 export async function registerWithKyc(req, res) {
   try {
-    const { email, password, name, dob, phone, lineId, facebookProfileUrl } = req.body;
+    const {
+      email,
+      password,
+      name,
+      dob,
+      phone,
+      lineId,
+      facebookProfileUrl,
+      address,
+    } = req.body || {};
+
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    const passwordText = String(password || "");
+    if (passwordText.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+    const nameText = String(name || "").trim();
+    if (!nameText) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+    const addressText = String(address || "").trim();
+    if (!addressText) {
+      return res.status(400).json({ message: "Address is required" });
+    }
 
     // ตรวจไฟล์
     const idCard = req.files?.idCardImage?.[0];
@@ -19,7 +46,7 @@ export async function registerWithKyc(req, res) {
     if (!idCard || !selfie) return res.status(400).json({ message: "Both images are required" });
 
     // ตรวจซ้ำ email
-    const exists = await User.findOne({ email });
+    const exists = await User.findOne({ email: normalizedEmail });
     if (exists) return res.status(409).json({ message: "Email already used" });
 
     // คำนวณอายุ
@@ -28,13 +55,20 @@ export async function registerWithKyc(req, res) {
     const age = differenceInYears(new Date(), birthDate);
     const ageVerified = age >= AGE_MIN;
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(passwordText, 10);
 
     const user = await User.create({
-      email,
+      email: normalizedEmail,
       passwordHash,
       role: "user", // 🔒 ล็อกไว้ ไม่รับ role จาก client
-      profile: { name, dob: birthDate, phone, lineId, facebookProfileUrl },
+      profile: {
+        name: nameText,
+        dob: birthDate,
+        phone: phone ? String(phone).trim() : undefined,
+        lineId: lineId ? String(lineId).trim() : undefined,
+        facebookProfileUrl: facebookProfileUrl ? String(facebookProfileUrl).trim() : undefined,
+        address: addressText,
+      },
       ageVerified,
       kyc: {
         idCardImagePath: idCard.path,
@@ -61,6 +95,14 @@ export async function registerWithKyc(req, res) {
         },
         isVerified: user.ageVerified && kycStatus === "approved",
         canOrderViaLine: user.ageVerified && kycStatus === "approved",
+        profile: {
+          name: user.profile?.name,
+          dob: user.profile?.dob,
+          phone: user.profile?.phone,
+          lineId: user.profile?.lineId,
+          facebookProfileUrl: user.profile?.facebookProfileUrl,
+          address: user.profile?.address,
+        },
       },
       nextStep: user.ageVerified
         ? "Await admin KYC review"
@@ -68,6 +110,7 @@ export async function registerWithKyc(req, res) {
       redirectBase: redirectBase(user.role)
     });
   } catch (e) {
+    console.error("Register error:", e);
     res.status(500).json({ message: "Register error" });
   }
 }
@@ -100,6 +143,14 @@ export async function login(req, res) {
         email: user.email,
         role: user.role,
         ageVerified: user.ageVerified,
+        profile: {
+          name: user.profile?.name,
+          dob: user.profile?.dob,
+          phone: user.profile?.phone,
+          lineId: user.profile?.lineId,
+          facebookProfileUrl: user.profile?.facebookProfileUrl,
+          address: user.profile?.address,
+        },
         kycStatus,
         kyc: {
           status: kycStatus,
@@ -153,6 +204,7 @@ export async function me(req, res) {
         phone: user.profile?.phone,
         lineId: user.profile?.lineId,
         facebookProfileUrl: user.profile?.facebookProfileUrl,
+        address: user.profile?.address,
       },
       ageVerified: user.ageVerified,
       kycStatus,
@@ -167,3 +219,4 @@ export async function me(req, res) {
     res.status(500).json({ message: "Server error" });
   }
 }
+    

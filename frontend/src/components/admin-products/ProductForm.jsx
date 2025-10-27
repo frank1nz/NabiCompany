@@ -28,6 +28,7 @@ export default function ProductForm({
   const canSubmit =
     form.name.trim().length > 1 &&
     Number(form.price) > 0 &&
+    Number(form.stock) >= 0 &&
     !loading;
 
   const handleSubmit = async (e) => {
@@ -67,6 +68,15 @@ export default function ProductForm({
               ),
               inputProps: { min: 0, step: '0.01' },
             }}
+          />
+          <TextField
+            label="จำนวนคงเหลือ (ชิ้น)"
+            type="number"
+            value={form.stock}
+            onChange={handleChange('stock')}
+            required
+            sx={{ minWidth: 180 }}
+            inputProps={{ min: 0, step: 1 }}
           />
         </Stack>
 

@@ -6,10 +6,10 @@ const productSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     images: { type: [String], default: [] }, // เก็บ URL หรือ path
     price: { type: Number, default: 0 },    // แสดงราคาอ้างอิง (ไม่ใช้ขายจริง)
+    stock: { type: Number, min: 0, default: 0 },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     tags: { type: [String], default: [] },
-
-  visibility: { type: String, enum: ["public", "hidden"], default: "public" }, // ซ่อนชั่วคราว
+    visibility: { type: String, enum: ["public", "hidden"], default: "public" }, // ซ่อนชั่วคราว
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
