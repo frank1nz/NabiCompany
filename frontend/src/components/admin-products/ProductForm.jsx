@@ -1,11 +1,21 @@
 import { useState } from 'react';
 import {
-  Stack, TextField, Button, Typography, Box, MenuItem, Alert, InputAdornment
+  Stack, TextField, Button, Typography, Box, MenuItem, Alert, InputAdornment, Paper
 } from '@mui/material';
 import ImagePicker from './ImagesPicker';
 
 const VISIBILITY = ['public', 'hidden'];
 const STATUS = ['active', 'inactive'];
+
+// 💙 Blue Minimal Theme
+const BRAND = {
+  navy: '#0B2B54',
+  blue: '#1D4ED8',
+  sky: '#0EA5E9',
+  soft: '#E6F3FF',
+  border: 'rgba(2,132,199,.18)',
+  ink: '#0F172A',
+};
 
 export default function ProductForm({
   initialForm,
@@ -44,38 +54,89 @@ export default function ProductForm({
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-      <Stack spacing={2}>
+    <Paper
+      elevation={0}
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        border: `1px solid ${BRAND.border}`,
+        boxShadow: '0 3px 14px rgba(2,132,199,.06)',
+        background: '#fff',
+        width: '100%',
+      }}
+    >
+      <Stack spacing={2.5}>
         {/* Product Info */}
-        <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          gap={2}
+          sx={{ '& .MuiTextField-root': { flex: 1 } }}
+        >
           <TextField
             label="ชื่อสินค้า"
             value={form.name}
             onChange={handleChange('name')}
             required
             fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': { borderColor: BRAND.border },
+                '&:hover fieldset': { borderColor: BRAND.sky },
+                '&.Mui-focused fieldset': {
+                  borderColor: BRAND.blue,
+                  boxShadow: '0 0 0 2px rgba(29,78,216,.08)',
+                },
+              },
+            }}
           />
+
           <TextField
             label="ราคา (บาท)"
             type="number"
             value={form.price}
             onChange={handleChange('price')}
             required
-            sx={{ minWidth: 200 }}
+            sx={{
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': { borderColor: BRAND.border },
+                '&:hover fieldset': { borderColor: BRAND.sky },
+                '&.Mui-focused fieldset': {
+                  borderColor: BRAND.blue,
+                  boxShadow: '0 0 0 2px rgba(29,78,216,.08)',
+                },
+              },
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">฿</InputAdornment>
               ),
-              inputProps: { min: 0, step: '0.01' },
+              inputProps: { min: 0, step: 1 },
             }}
           />
+
           <TextField
             label="จำนวนคงเหลือ (ชิ้น)"
             type="number"
             value={form.stock}
             onChange={handleChange('stock')}
             required
-            sx={{ minWidth: 180 }}
+            sx={{
+              minWidth: 180,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': { borderColor: BRAND.border },
+                '&:hover fieldset': { borderColor: BRAND.sky },
+                '&.Mui-focused fieldset': {
+                  borderColor: BRAND.blue,
+                  boxShadow: '0 0 0 2px rgba(29,78,216,.08)',
+                },
+              },
+            }}
             inputProps={{ min: 0, step: 1 }}
           />
         </Stack>
@@ -86,6 +147,17 @@ export default function ProductForm({
           onChange={handleChange('description')}
           multiline
           rows={3}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              '& fieldset': { borderColor: BRAND.border },
+              '&:hover fieldset': { borderColor: BRAND.sky },
+              '&.Mui-focused fieldset': {
+                borderColor: BRAND.blue,
+                boxShadow: '0 0 0 2px rgba(29,78,216,.08)',
+              },
+            },
+          }}
         />
 
         <TextField
@@ -93,6 +165,17 @@ export default function ProductForm({
           value={form.tags}
           onChange={handleChange('tags')}
           placeholder="เช่น craft, honey, premium"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              '& fieldset': { borderColor: BRAND.border },
+              '&:hover fieldset': { borderColor: BRAND.sky },
+              '&.Mui-focused fieldset': {
+                borderColor: BRAND.blue,
+                boxShadow: '0 0 0 2px rgba(29,78,216,.08)',
+              },
+            },
+          }}
         />
 
         {/* Images */}
@@ -110,7 +193,18 @@ export default function ProductForm({
             label="Visibility"
             value={form.visibility}
             onChange={handleChange('visibility')}
-            sx={{ minWidth: 160 }}
+            sx={{
+              minWidth: 160,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': { borderColor: BRAND.border },
+                '&:hover fieldset': { borderColor: BRAND.sky },
+                '&.Mui-focused fieldset': {
+                  borderColor: BRAND.blue,
+                  boxShadow: '0 0 0 2px rgba(29,78,216,.08)',
+                },
+              },
+            }}
           >
             {VISIBILITY.map((v) => (
               <MenuItem key={v} value={v}>
@@ -124,7 +218,18 @@ export default function ProductForm({
             label="Status"
             value={form.status}
             onChange={handleChange('status')}
-            sx={{ minWidth: 160 }}
+            sx={{
+              minWidth: 160,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': { borderColor: BRAND.border },
+                '&:hover fieldset': { borderColor: BRAND.sky },
+                '&.Mui-focused fieldset': {
+                  borderColor: BRAND.blue,
+                  boxShadow: '0 0 0 2px rgba(29,78,216,.08)',
+                },
+              },
+            }}
           >
             {STATUS.map((v) => (
               <MenuItem key={v} value={v}>
@@ -135,8 +240,16 @@ export default function ProductForm({
         </Stack>
 
         {/* Messages */}
-        {success && <Alert severity="success">{success}</Alert>}
-        {error && <Alert severity="error">{error}</Alert>}
+        {success && (
+          <Alert severity="success" sx={{ borderRadius: 2 }}>
+            {success}
+          </Alert>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ borderRadius: 2 }}>
+            {error}
+          </Alert>
+        )}
 
         {/* Submit */}
         <Button
@@ -145,15 +258,20 @@ export default function ProductForm({
           disabled={!canSubmit || loading}
           sx={{
             alignSelf: 'flex-start',
-            bgcolor: '#D4AF37',
-            color: '#111',
+            bgcolor: BRAND.blue,
+            color: '#fff',
             fontWeight: 800,
-            '&:hover': { bgcolor: '#C6A132' },
+            borderRadius: 2,
+            px: 3,
+            py: 1,
+            textTransform: 'none',
+            boxShadow: '0 3px 10px rgba(2,132,199,.25)',
+            '&:hover': { bgcolor: BRAND.sky },
           }}
         >
           {loading ? 'กำลังเพิ่มสินค้า…' : 'เพิ่มสินค้า'}
         </Button>
       </Stack>
-    </Box>
+    </Paper>
   );
 }
