@@ -8,6 +8,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import SearchIcon from '@mui/icons-material/Search';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+
 
 import {
   adminListProducts,
@@ -282,7 +284,7 @@ export default function AdminProducts() {
                   color: '#fff'
                 }}
               >
-                <AddRoundedIcon fontSize="small" />
+                <DescriptionOutlinedIcon fontSize="small" />
               </Box>
               <Typography
                 variant="h6"
