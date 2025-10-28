@@ -14,6 +14,7 @@ import {
   Chip,
   Button,
 } from '@mui/material';
+import { Link } from 'react-router-dom';
 import LocalFloristOutlinedIcon from '@mui/icons-material/LocalFloristOutlined';
 import OpacityOutlinedIcon from '@mui/icons-material/OpacityOutlined';
 import WhatshotOutlinedIcon from '@mui/icons-material/WhatshotOutlined';
@@ -49,6 +50,7 @@ export default function OurStory() {
             <Grid item xs={12} md={7}>
               <Typography
                 variant="h2"
+                component="h1"
                 fontWeight={900}
                 sx={{
                   fontSize: { xs: 34, sm: 42, md: 56 },
@@ -68,8 +70,9 @@ export default function OurStory() {
             <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
               <Box
                 component="img"
+                loading="lazy"
                 src="/assets/story-hero.jpg"
-                alt="Our distillery"
+                alt="ภาพโรงกลั่นและทีมงานของเรา"
                 onError={(e) => (e.currentTarget.style.display = 'none')}
                 sx={{ width: '100%', borderRadius: 3, objectFit: 'cover', boxShadow: 2 }}
               />
@@ -82,10 +85,7 @@ export default function OurStory() {
       <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
         <Grid container spacing={4} alignItems="stretch">
           <Grid item xs={12} md={7}>
-            <Paper
-              variant="outlined"
-              sx={{ p: { xs: 3, md: 4 }, borderRadius: 3, height: '100%' }}
-            >
+            <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 3, height: '100%' }}>
               <Chip
                 label="Our Mission"
                 sx={{ bgcolor: '#F4E7B1', color: '#1a1a1a', mb: 2, fontWeight: 700 }}
@@ -125,9 +125,11 @@ export default function OurStory() {
             >
               <CardMedia
                 component="img"
+                loading="lazy"
                 src="/assets/story-craft.jpg"
-                alt="Craft"
+                alt="งานคราฟต์และคาแรกเตอร์ของสุรา"
                 sx={{ height: 200, objectFit: 'cover', opacity: 0.9 }}
+                onError={(e) => (e.currentTarget.style.display = 'none')}
               />
               <CardContent>
                 <Typography variant="h6" fontWeight={900} sx={{ mb: 1 }}>
@@ -204,7 +206,7 @@ export default function OurStory() {
           </Grid>
         </Box>
 
-        {/* TIMELINE (เรียบ ๆ) */}
+        {/* TIMELINE */}
         <Box sx={{ mt: { xs: 6, md: 10 } }}>
           <Typography variant="h5" fontWeight={900} sx={{ color: BRAND.navy, mb: 2 }}>
             Journey
@@ -212,26 +214,10 @@ export default function OurStory() {
           <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3 }}>
             <Grid container spacing={2}>
               {[
-                {
-                  year: '2019',
-                  title: 'เริ่มทดลองกลั่น',
-                  text: 'จากหม้อกลั่นเล็ก ๆ และสูตรสมุนไพรบ้าน ๆ',
-                },
-                {
-                  year: '2021',
-                  title: 'ร่วมมือชุมชน',
-                  text: 'พัฒนาวัตถุดิบกับเกษตรกรและโรงกลั่นท้องถิ่น',
-                },
-                {
-                  year: '2023',
-                  title: 'Small-Batch Line',
-                  text: 'ตั้งไลน์กลั่นทดลองแบบควบคุมคุณภาพเข้ม',
-                },
-                {
-                  year: '2025',
-                  title: 'สู่ตลาดพรีเมียม',
-                  text: 'เปิดตัวคอลเลกชันแรกพร้อมดีไซน์ใหม่',
-                },
+                { year: '2019', title: 'เริ่มทดลองกลั่น', text: 'จากหม้อกลั่นเล็ก ๆ และสูตรสมุนไพรบ้าน ๆ' },
+                { year: '2021', title: 'ร่วมมือชุมชน', text: 'พัฒนาวัตถุดิบกับเกษตรกรและโรงกลั่นท้องถิ่น' },
+                { year: '2023', title: 'Small-Batch Line', text: 'ตั้งไลน์กลั่นทดลองแบบควบคุมคุณภาพเข้ม' },
+                { year: '2025', title: 'สู่ตลาดพรีเมียม', text: 'เปิดตัวคอลเลกชันแรกพร้อมดีไซน์ใหม่' },
               ].map((t, i) => (
                 <Grid key={t.year} item xs={12} md={3}>
                   <Stack spacing={0.5}>
@@ -247,12 +233,7 @@ export default function OurStory() {
                     </Typography>
                   </Stack>
                   {i < 3 && (
-                    <Divider
-                      sx={{
-                        display: { xs: 'block', md: 'none' },
-                        my: 2,
-                      }}
-                    />
+                    <Divider sx={{ display: { xs: 'block', md: 'none' }, my: 2 }} />
                   )}
                 </Grid>
               ))}
@@ -260,16 +241,18 @@ export default function OurStory() {
           </Paper>
         </Box>
 
-        {/* FOUNDER / TEAM */}
+        {/* FOUNDER */}
         <Box sx={{ mt: { xs: 6, md: 10 } }}>
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} md={5}>
               <Card sx={{ borderRadius: 3, overflow: 'hidden' }}>
                 <CardMedia
                   component="img"
+                  loading="lazy"
                   src="/assets/story-founder.jpg"
-                  alt="Founder"
+                  alt="ผู้ก่อตั้ง NABI SPIRITS"
                   sx={{ height: 300, objectFit: 'cover' }}
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
                 />
               </Card>
             </Grid>
@@ -293,8 +276,7 @@ export default function OurStory() {
             textAlign: 'center',
             p: { xs: 3, md: 5 },
             borderRadius: 4,
-            background:
-              'linear-gradient(135deg, rgba(212,175,55,.12), rgba(28,39,56,.06))',
+            background: 'linear-gradient(135deg, rgba(212,175,55,.12), rgba(28,39,56,.06))',
             border: '1px solid rgba(0,0,0,.06)',
           }}
         >
@@ -306,9 +288,11 @@ export default function OurStory() {
           </Typography>
           <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap">
             <Button
-              href="/products"
+              component={Link}
+              to="/products"
               variant="contained"
               endIcon={<ArrowForwardIcon />}
+              aria-label="ไปที่หน้าสินค้า"
               sx={{
                 bgcolor: BRAND.gold,
                 color: '#111',
@@ -321,8 +305,10 @@ export default function OurStory() {
               Explore Products
             </Button>
             <Button
-              href="/about"
+              component={Link}
+              to="/our-story"
               variant="text"
+              aria-label="ไปที่หน้า Our Story"
               sx={{ fontWeight: 800, color: BRAND.navy }}
             >
               Learn More
