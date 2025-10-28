@@ -100,14 +100,39 @@ export default function Register() {
     } finally { setLoading(false); }
   }
 
+  // ===== ปรับค่าความมนและการตั้งค่าช่อง Address =====
+  const RADIUS = 1; // ลดความมนทุกช่อง
+  const ADDRESS = {
+    colsMd: 12,      // 6 = ครึ่งแถว, 12 = เต็มแถว
+    width: 650,      // ความกว้างช่องที่อยู่ (px)
+    minRows: 6,      // ความสูงเริ่มต้น (บรรทัด)
+  };
+
   const inputCapsuleSx = {
     '& .MuiOutlinedInput-root': {
-      borderRadius: 16,           // มนน้อยลง
+      borderRadius: RADIUS,
       bgcolor: '#EAF3FF',
       '& fieldset': { borderColor: 'transparent' },
       '&:hover fieldset': { borderColor: 'transparent' },
       '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
       px: 1,
+    },
+  };
+
+  const bigFieldSx = {
+    ...inputCapsuleSx,
+    '& .MuiInputLabel-root': {
+      fontSize: 16,
+    },
+    '& .MuiOutlinedInput-root': {
+      ...inputCapsuleSx['& .MuiOutlinedInput-root'],
+      minHeight: 60,
+      px: 1.25,
+    },
+    '& .MuiInputBase-input': {
+      fontSize: 16,
+      lineHeight: 1.6,
+      py: 1.05,
     },
   };
 
@@ -122,17 +147,16 @@ export default function Register() {
         bgcolor: '#F5F7FB',
       }}
     >
-      <Container maxWidth="xl" disableGutters>
+      <Container maxWidth="md" disableGutters>
         <Paper
           elevation={0}
           sx={{
-            borderRadius: 5,
+            borderRadius: 4,
             overflow: 'hidden',
-            border: '1px solid rgba(0,0,0,.06)',
-            boxShadow: '0 16px 40px rgba(0,0,0,.08)',
+            border: '1px solid rgba(0,0,0,.05)',
+            boxShadow: '0 8px 24px rgba(0,0,0,.06)',
             display: 'grid',
-            // หดแผงซ้ายลงเพื่อให้ฝั่งฟอร์มยาวขึ้น
-            gridTemplateColumns: { xs: '1fr', md: 'clamp(170px,20vw,220px) 1fr' },
+            gridTemplateColumns: { xs: '1fr', md: 'clamp(140px,18vw,180px) 1fr' },
           }}
         >
           {/* ฝั่งซ้าย */}
@@ -142,31 +166,23 @@ export default function Register() {
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
-              p: 4,
+              p: 1,
               background: `linear-gradient(180deg, ${BRAND.blue1} 0%, ${BRAND.blue2} 100%)`,
               color: '#fff',
             }}
           >
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'radial-gradient(65% 80% at 30% 20%, rgba(255,255,255,.25) 0%, rgba(255,255,255,0) 60%), radial-gradient(70% 90% at 80% 0%, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 55%)',
-              }}
-            />
-            <Stack alignItems="center" spacing={2} zIndex={1}>
+            <Stack alignItems="center" spacing={1.5} zIndex={1}>
               <Box
                 sx={{
-                  width: 82, height: 82, borderRadius: 3,
-                  bgcolor: 'rgba(255,255,255,.18)',
+                  width: 65, height: 65, borderRadius: 2,
+                  bgcolor: 'rgba(255,255,255,.2)',
                   display: 'grid', placeItems: 'center',
                   backdropFilter: 'blur(2px)', overflow: 'hidden',
                 }}
               >
-                <img src={logo} alt="Nabi Spirits Logo" style={{ width: '70%', height: '70%', objectFit: 'contain' }} />
+                <img src={logo} alt="Nabi Spirits Logo" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
               </Box>
-              <Typography variant="h6" fontWeight={800} letterSpacing={1}>
+              <Typography variant="subtitle1" fontWeight={700} letterSpacing={1}>
                 NABI SPIRITS
               </Typography>
             </Stack>
@@ -177,16 +193,16 @@ export default function Register() {
             component="form"
             onSubmit={onSubmit}
             sx={{
-              p: { xs: 3, md: 5 },
+              p: { xs: 2.5, md: 4 },
               bgcolor: '#fff',
-              maxWidth: 980,        // ← ทำให้แถวกว้างขึ้น
-              mx: 'auto',           // จัดกึ่งกลาง
+              maxWidth: 720,
+              mx: 'auto',
               width: '100%',
             }}
           >
             <Stack spacing={3}>
               <Box>
-                <Typography variant="h4" fontWeight={900} color="#2B4A73" sx={{ mb: .5 }}>
+                <Typography variant="h5" fontWeight={900} color="#2B4A73" sx={{ mb: .25 }}>
                   Create Account
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -196,15 +212,16 @@ export default function Register() {
 
               {error && <Alert severity="error">{error}</Alert>}
 
-              {/* ===== ฟอร์ม: 2 ช่องต่อแถว (md ขึ้นไป) ===== */}
-              <Grid container columns={12} columnSpacing={3} rowSpacing={2}>
+              {/* ===== ฟอร์ม: 2 ช่องต่อแถว ===== */}
+              <Grid container columns={12} columnSpacing={4} rowSpacing={3}>
                 <Grid item xs={12} md={6}>
                   <TextField
                     label="ชื่อ-นามสกุล"
                     value={form.name}
                     onChange={(e) => setField('name', e.target.value)}
-                    required fullWidth sx={inputCapsuleSx}
-                    InputProps={{ startAdornment: (<InputAdornment position="start"><PersonOutlined fontSize="small" /></InputAdornment>) }}
+                    required fullWidth size="medium"
+                    sx={bigFieldSx}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><PersonOutlined /></InputAdornment>) }}
                   />
                 </Grid>
 
@@ -212,11 +229,11 @@ export default function Register() {
                   <TextField
                     label="วันเดือนปีเกิด" type="date" value={form.dob}
                     onChange={(e) => setField('dob', e.target.value)}
-                    InputLabelProps={{ shrink: true }} required fullWidth
+                    InputLabelProps={{ shrink: true, sx: { fontSize: 16 } }} required fullWidth
                     error={!!form.dob && !ageOk}
                     helperText={form.dob ? (ageOk ? `อายุ ${age} ปี` : 'ต้องอายุอย่างน้อย 20 ปี') : ' '}
-                    sx={inputCapsuleSx}
-                    InputProps={{ startAdornment: (<InputAdornment position="start"><CalendarMonthOutlined fontSize="small" /></InputAdornment>) }}
+                    size="medium" sx={bigFieldSx}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><CalendarMonthOutlined /></InputAdornment>) }}
                   />
                 </Grid>
 
@@ -226,30 +243,46 @@ export default function Register() {
                     onChange={(e) => setField('email', e.target.value)}
                     required fullWidth error={!!form.email && !emailOk}
                     helperText={form.email && !emailOk ? 'รูปแบบอีเมลไม่ถูกต้อง' : ' '}
-                    sx={inputCapsuleSx}
-                    InputProps={{ startAdornment: (<InputAdornment position="start"><EmailOutlined fontSize="small" /></InputAdornment>) }}
+                    size="medium" sx={bigFieldSx}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><EmailOutlined /></InputAdornment>) }}
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    label="รหัสผ่าน" type={showPw ? 'text' : 'password'} value={form.password}
-                    onChange={(e) => setField('password', e.target.value)}
-                    required fullWidth error={!!form.password && !pwOk}
-                    helperText={form.password && !pwOk ? 'อย่างน้อย 6 ตัวอักษร' : ' '}
-                    sx={inputCapsuleSx}
-                    InputProps={{
-                      startAdornment: (<InputAdornment position="start"><LockOutlined fontSize="small" /></InputAdornment>),
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPw((s) => !s)} edge="end">
-                            {showPw ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
+               <Grid item xs={12} md={6}>
+                    <TextField
+                      label="รหัสผ่าน"
+                      type={showPw ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={(e) => setField('password', e.target.value)}
+                      required
+                      error={!!form.password && !pwOk}
+                      helperText={form.password && !pwOk ? 'อย่างน้อย 6 ตัวอักษร' : ' '}
+                      size="medium"
+                      sx={{
+                        ...bigFieldSx,                // คงสไตล์พื้นฐาน
+                        width: 215,                   // ← ปรับความกว้างที่นี่ เช่น 360, 400, '80%' ได้หมด
+                        '& .MuiOutlinedInput-root': { // merge ของเดิมก่อนค่อยใส่ใหม่
+                          ...bigFieldSx['& .MuiOutlinedInput-root'],
+                          minHeight: 60,              // ← ปรับความสูงช่อง
+                          bgcolor: '#EAF3FF',         // ย้ำสีพื้นหลัง (ป้องกันหาย)
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlined />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton onClick={() => setShowPw((s) => !s)} edge="end">
+                              {showPw ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
 
                 <Grid item xs={12} md={6}>
                   <TextField
@@ -257,8 +290,8 @@ export default function Register() {
                     onChange={(e) => setField('phone', e.target.value)}
                     fullWidth error={!!form.phone && !phoneOk}
                     helperText={form.phone && !phoneOk ? 'กรุณากรอกเฉพาะตัวเลข/สัญลักษณ์ที่เกี่ยวข้อง' : ' '}
-                    sx={inputCapsuleSx}
-                    InputProps={{ startAdornment: (<InputAdornment position="start"><PhoneIphoneOutlined fontSize="small" /></InputAdornment>) }}
+                    size="medium" sx={bigFieldSx}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><PhoneIphoneOutlined /></InputAdornment>) }}
                   />
                 </Grid>
 
@@ -266,34 +299,65 @@ export default function Register() {
                   <TextField
                     label="LINE ID" value={form.lineId}
                     onChange={(e) => setField('lineId', e.target.value)}
-                    fullWidth sx={inputCapsuleSx}
+                    fullWidth size="medium" sx={bigFieldSx}
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <TextField
-                    label="ลิงก์ Facebook (ถ้ามี)" value={form.facebookProfileUrl}
+                    label="ลิงก์ Facebook (ถ้ามี)"
+                    value={form.facebookProfileUrl}
                     onChange={(e) => setField('facebookProfileUrl', e.target.value)}
-                    fullWidth placeholder="https://facebook.com/your.profile"
-                    sx={inputCapsuleSx}
-                    InputProps={{ startAdornment: (<InputAdornment position="start"><LinkOutlined fontSize="small" /></InputAdornment>) }}
+                    placeholder="https://facebook.com/your.profile"
+                    size="medium"
+                    sx={{
+                      // 1) คงสไตล์เดิมไว้ก่อน
+                      ...bigFieldSx,
+
+                      // 2) เพิ่มความกว้างเฉพาะช่องนี้
+                      width: 480, // ← ปรับได้ตามต้องการ (ตัวเลข px หรือ '80%' ก็ได้)
+
+                      // 3) เวลาแก้ส่วน .MuiOutlinedInput-root ต้อง merge ของเดิมก่อน
+                      '& .MuiOutlinedInput-root': {
+                        ...bigFieldSx['& .MuiOutlinedInput-root'],
+                        minHeight: 70,               // ← ปรับความสูงที่นี่
+                        bgcolor: '#EAF3FF',          // ← ย้ำพื้นหลังไว้ให้แน่ใจ
+                        // หรือใช้ backgroundColor ก็ได้
+                        // backgroundColor: '#EAF3FF',
+                      },
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LinkOutlined />
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
 
-                {/* ที่อยู่: ให้กว้างเต็มแถว */}
-                <Grid item xs={12} md={12}>
+                {/* ช่องที่อยู่: ปรับเองได้ทั้งกว้าง/ยาว */}
+                <Grid item xs={12} md={ADDRESS.colsMd}>
                   <TextField
                     label="ที่อยู่สำหรับจัดส่ง"
                     value={form.address}
                     onChange={(e) => setField('address', e.target.value)}
-                    required fullWidth multiline minRows={3}
+                    required
+                    multiline
+                    minRows={ADDRESS.minRows}
                     placeholder="บ้านเลขที่ / อาคาร / ถนน / แขวง / เขต / จังหวัด / รหัสไปรษณีย์"
+                    size="medium"
                     sx={{
-                      ...inputCapsuleSx,
+                      ...bigFieldSx,
+                      width: ADDRESS.width,
                       '& .MuiOutlinedInput-root': {
-                        ...inputCapsuleSx['& .MuiOutlinedInput-root'],
-                        borderRadius: 12,
+                        ...bigFieldSx['& .MuiOutlinedInput-root'],
+                        borderRadius: RADIUS,
                         bgcolor: '#F3F7FF',
+                      },
+                      '& textarea': {
+                        resize: 'both',
+                        overflow: 'auto',
                       },
                     }}
                   />
@@ -364,17 +428,12 @@ export default function Register() {
                 >
                   {loading ? 'กำลังส่งข้อมูล…' : 'สร้างบัญชี'}
                 </Button>
-                {!agreeOk && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    * กรุณาติ๊กยอมรับเงื่อนไขก่อนส่งข้อมูล
-                  </Typography>
-                )}
               </Box>
 
               <Typography variant="body2" color="text.secondary" align="center">
                 มีบัญชีแล้ว?{' '}
                 <MuiLink component={Link} to="/login" underline="hover" sx={{ fontWeight: 700 }}>
-                  เข้าสู่ระบบ
+                เข้าสู่ระบบ
                 </MuiLink>
               </Typography>
             </Stack>

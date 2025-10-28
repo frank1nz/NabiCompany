@@ -149,7 +149,7 @@ export default function Login() {
                   Welcome
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Login in to your account to continue
+                  ยินดีต้อนรับเข้าสู่โลกแห่งจินตนาการ
                 </Typography>
               </Box>
 
@@ -161,7 +161,7 @@ export default function Login() {
 
               {/* Email */}
               <TextField
-                label="Email"
+                label="อีเมล"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -173,7 +173,7 @@ export default function Login() {
                 fullWidth
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 999,
+                    borderRadius: 1,
                     bgcolor: '#EAF3FF',
                     '& fieldset': { borderColor: 'transparent' },
                     '&:hover fieldset': { borderColor: 'transparent' },
@@ -192,7 +192,7 @@ export default function Login() {
 
               {/* Password */}
               <TextField
-                label="Password"
+                label="รหัสผ่าน"
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -204,7 +204,7 @@ export default function Login() {
                 fullWidth
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 999,
+                    borderRadius: 1,
                     bgcolor: '#EAF3FF',
                     '& fieldset': { borderColor: 'transparent' },
                     '&:hover fieldset': { borderColor: 'transparent' },
@@ -231,7 +231,7 @@ export default function Login() {
               {/* ลิงก์ Forgot */}
               <Stack direction="row" justifyContent="flex-end" sx={{ mt: -1 }}>
                 <MuiLink component={Link} to="/forgot-password" underline="hover" color="text.secondary">
-                  forgot your password?
+                  ลืมรหัสผ่าน ?
                 </MuiLink>
               </Stack>
 
