@@ -11,7 +11,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { login } from '../lib/auth';
 import { useAuth } from '../store/authStore';
-
+import logo from '../assets/nabi_logo_no_bg.png';
 
 const BRAND = { gold: '#D4AF37', blue1: '#5DB3FF', blue2: '#257CFF' };
 
@@ -39,11 +39,10 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const data = await login({ email: email.trim(), password }); // trim email
+      const data = await login({ email: email.trim(), password });
       setToken?.(data.token);
       if (data.user) setUser?.(data.user);
 
-      // ตรวจสอบ me อีกครั้ง; ถ้า fail แปลว่า token ใช้ไม่ได้
       const me = (await fetchMe?.().catch(() => {
         localStorage.removeItem('token');
         throw new Error('ไม่สามารถตรวจสอบตัวตนได้ โปรดลองอีกครั้ง');
@@ -53,16 +52,11 @@ export default function Login() {
       const from = fromState || fromQuery;
       const role = String(me?.role || '').toLowerCase();
 
-      if (from) {
-        navigate(from, { replace: true });
-      } else if (role === 'admin') {
-        navigate('/admin/kyc', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+      if (from) navigate(from, { replace: true });
+      else if (role === 'admin') navigate('/admin/kyc', { replace: true });
+      else navigate('/', { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'เข้าสู่ระบบไม่สำเร็จ');
-      // โฟกัสไปที่แถบ error เพื่อการเข้าถึง
       setTimeout(() => alertRef.current?.focus(), 0);
     } finally {
       setLoading(false);
@@ -82,7 +76,6 @@ export default function Login() {
       }}
     >
       <Container maxWidth="md" disableGutters>
-        {/* Card สองฝั่ง */}
         <Paper
           elevation={0}
           sx={{
@@ -94,18 +87,18 @@ export default function Login() {
             gridTemplateColumns: { xs: '1fr', md: '1.1fr 1fr' },
           }}
         >
-          {/* แผงซ้าย: พื้นหลังไล่เฉด + โลโก้ */}
+          {/* ฝั่งซ้าย: โลโก้ + สโลแกน */}
           <Box
             sx={{
               display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
-              p: 4,
+              p: 5,
               background: `linear-gradient(180deg, ${BRAND.blue1} 0%, ${BRAND.blue2} 100%)`,
+              color: '#fff',
             }}
           >
-            {/* คลื่นบาง ๆ */}
             <Box
               sx={{
                 position: 'absolute',
@@ -114,32 +107,45 @@ export default function Login() {
                   'radial-gradient(65% 80% at 30% 20%, rgba(255,255,255,.25) 0%, rgba(255,255,255,0) 60%), radial-gradient(70% 90% at 80% 0%, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 55%)',
               }}
             />
-            <Stack alignItems="center" zIndex={1} spacing={2}>
-              {/* โลโก้ / อักษรย่อ */}
+            <Stack alignItems="center" spacing={2} zIndex={1}>
               <Box
                 sx={{
-                  width: 72, height: 72, borderRadius: 2,
-                  bgcolor: 'rgba(255,255,255,.2)',
-                  display: 'grid', placeItems: 'center',
+                  width: 150,
+                  height: 150,
+                  borderRadius: 3,
+                  bgcolor: 'rgba(255,255,255,.25)',
+                  display: 'grid',
+                  placeItems: 'center',
                   backdropFilter: 'blur(2px)',
+                  overflow: 'hidden',
                 }}
               >
-                <Typography variant="h4" fontWeight={900} color="#fff">🍾</Typography>
+                <img
+                  src={logo}
+                  alt="Nabi Spirits Logo"
+                  style={{ width: '80%', height: '80%', objectFit: 'contain' }}
+                />
               </Box>
-              <Typography variant="h6" fontWeight={800} color="#fff" letterSpacing={1}>
+              <Typography variant="h6" fontWeight={800}>
                 NABI SPIRITS
               </Typography>
-              <Typography variant="caption" color="rgba(255,255,255,.85)" textAlign="center" sx={{ maxWidth: 280 }}>
-                ทุกหยดที่รินออกจากขวด คือรสชาติของแผ่นดินไทย กลิ่นหอมของข้าวและผลไม้ท้องถิ่น ที่ผสมผสานด้วยหัวใจของผู้คนในชุมชน
+              <Typography
+                variant="caption"
+                color="rgba(255,255,255,.9)"
+                textAlign="center"
+                sx={{ maxWidth: 260 }}
+              >
+                ทุกหยดที่รินออกจากขวด คือรสชาติของแผ่นดินไทย  
+                กลิ่นหอมของข้าวและผลไม้ท้องถิ่น ที่ผสมผสานด้วยหัวใจของผู้คนในชุมชน
               </Typography>
             </Stack>
           </Box>
 
-          {/* ฝั่งขวา: ฟอร์ม */}
+          {/* ฝั่งขวา: ฟอร์ม Login */}
           <Box component="form" onSubmit={onSubmit} sx={{ p: { xs: 3, md: 5 }, bgcolor: '#fff' }}>
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h4" fontWeight={900} color="#2B4A73" sx={{ mb: 0.5 }}>
+                <Typography variant="h4" fontWeight={900} color="#2B4A73">
                   Welcome
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -153,7 +159,7 @@ export default function Login() {
                 </Alert>
               )}
 
-              
+              {/* Email */}
               <TextField
                 label="Email"
                 type="email"
@@ -161,17 +167,10 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 error={!!email && !emailOk}
-                helperText={email && !emailOk ? 'รูปแบบอีเมลไม่ถูกต้อง' : ' '}
+                helperText={email && !emailOk ? 'Invalid email format' : ' '}
                 autoComplete="email"
                 disabled={loading}
                 fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailOutlined fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 999,
@@ -182,8 +181,16 @@ export default function Login() {
                     px: 1,
                   },
                 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailOutlined fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
               />
 
+              {/* Password */}
               <TextField
                 label="Password"
                 type={showPw ? 'text' : 'password'}
@@ -191,10 +198,20 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 error={!!password && !pwOk}
-                helperText={password && !pwOk ? 'อย่างน้อย 6 ตัวอักษร' : ' '}
+                helperText={password && !pwOk ? 'Minimum 6 characters' : ' '}
                 autoComplete="current-password"
                 disabled={loading}
                 fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 999,
+                    bgcolor: '#EAF3FF',
+                    '& fieldset': { borderColor: 'transparent' },
+                    '&:hover fieldset': { borderColor: 'transparent' },
+                    '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
+                    px: 1,
+                  },
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -203,39 +220,26 @@ export default function Login() {
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPw((s) => !s)}
-                        edge="end"
-                        aria-label={showPw ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
-                      >
+                      <IconButton onClick={() => setShowPw((s) => !s)} edge="end">
                         {showPw ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 999,
-                    bgcolor: '#EAF3FF',
-                    '& fieldset': { borderColor: 'transparent' },
-                    '&:hover fieldset': { borderColor: 'transparent' },
-                    '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
-                    px: 1,
-                  },
-                }}
               />
 
+              {/* ลิงก์ Forgot */}
               <Stack direction="row" justifyContent="flex-end" sx={{ mt: -1 }}>
                 <MuiLink component={Link} to="/forgot-password" underline="hover" color="text.secondary">
                   forgot your password?
                 </MuiLink>
               </Stack>
 
+              {/* ปุ่ม Login */}
               <Button
                 type="submit"
                 variant="contained"
                 disabled={!canSubmit}
-                fullWidth
                 sx={{
                   py: 1.2,
                   fontWeight: 900,
@@ -248,7 +252,7 @@ export default function Login() {
                   '&:hover': { bgcolor: '#1F6BEE' },
                 }}
               >
-                {loading ? 'กำลังเข้าสู่ระบบ…' : 'LOG IN'}
+                {loading ? 'Logging in…' : 'LOG IN'}
               </Button>
 
               <Divider flexItem sx={{ my: 1 }} />
