@@ -30,17 +30,21 @@ export default function Home() {
               'radial-gradient(80% 60% at 100% 0%, rgba(255,255,255,.10) 0%, transparent 60%), radial-gradient(70% 50% at 0% 100%, rgba(0,0,0,.10) 0%, transparent 60%)',
             pointerEvents: 'none',
           },
-          // ถ้าผู้ใช้ตั้งค่า reduce motion ให้ลดเอฟเฟกต์พื้นหลัง
-          '@media (prefers-reduced-motion: reduce)': {
-            '&::after': { background: 'none' },
-          },
+          '@media (prefers-reduced-motion: reduce)': { '&::after': { background: 'none' } },
         }}
       >
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-          <Box sx={{ maxWidth: 880, mx: 'auto', textAlign: 'center', px: { xs: 1, md: 0 } }}>
+          <Box
+            sx={{
+              maxWidth: 980,              // ✅ คุมความกว้างเนื้อหา
+              mx: 'auto',
+              textAlign: 'center',
+              px: { xs: 1.5, md: 0 },
+            }}
+          >
             <Typography
               variant="h2"
-              component="h1"           // ✅ ให้เป็น H1 ของหน้านี้
+              component="h1"
               fontWeight={900}
               sx={{
                 fontSize: { xs: 34, sm: 42, md: 56 },
@@ -48,20 +52,24 @@ export default function Home() {
                 letterSpacing: { xs: 0, md: 0.2 },
                 fontFamily: '"Playfair Display", serif',
                 mb: 2,
+                textShadow: '0 2px 8px rgba(0,0,0,.25)',   // ✅ ช่วยให้อ่านชัด
               }}
             >
               Crafting Thailand’s <br /> Finest Spirits
             </Typography>
 
+            {/* ✅ คำอธิบาย (subtitle) — ทำให้กลับมาเห็นแน่นอน */}
             <Typography
               variant="h6"
               sx={{
-                maxWidth: 720,
+                maxWidth: 760,           // คุมความกว้างเพื่อไม่ให้บรรทัดยาวเกิน
                 mx: 'auto',
-                opacity: 0.92,
+                mt: { xs: 1, md: 1.5 },
+                mb: { xs: 3.5, md: 4.5 }, // เผื่อระยะก่อนปุ่ม
                 lineHeight: 1.7,
                 fontWeight: 400,
-                mb: 4,
+                color: 'rgba(255,255,255,.92)', // ตัดกับพื้นหลังชัด ๆ
+                textShadow: '0 1px 4px rgba(0,0,0,.25)',
               }}
             >
               Experience the essence of Thai heritage through our handcrafted premium spirits.
@@ -90,10 +98,10 @@ export default function Home() {
 
               <Button
                 href="/about"
-                variant="outlined"      // ✅ ชัดขึ้นบนพื้นเข้ม
+                variant="outlined"
                 size="large"
                 sx={{
-                  borderColor: 'rgba(255,255,255,.6)',
+                  borderColor: 'rgba(255,255,255,.7)',
                   color: '#fff',
                   px: 2.2,
                   fontWeight: 800,

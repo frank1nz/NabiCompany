@@ -286,29 +286,7 @@ export default function Products({
                   </CardContent>
                 </CardActionArea>
 
-                <CardActions
-                  sx={{
-                    px: 2,
-                    py: 1.5,
-                    pt: 0,
-                    mt: 'auto',
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => handleAddToCart(product)}
-                    disabled={isBusy || outOfStock}
-                    sx={{
-                      fontWeight: 700,
-                      textTransform: 'none',
-                    }}
-                  >
-                    {buttonLabel}
-                  </Button>
-                </CardActions>
+              
               </Card>
             );
           })}

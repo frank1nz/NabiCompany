@@ -1,408 +1,337 @@
+// frontend/src/pages/admin/AdminOrders.jsx
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody,
-  TextField, MenuItem, Select, Button, Stack, Chip, Box, Alert, IconButton,
-  Toolbar, Divider, CircularProgress
+  Paper, Box, Toolbar, Stack, Typography, IconButton, Alert,
+  Select, MenuItem, TextField, InputAdornment, CircularProgress, Chip, Button,
+  Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle,
+  DialogContent, DialogActions
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
-import FilterAltRoundedIcon from '@mui/icons-material/FilterAltRounded';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 import { adminListOrders, adminUpdateOrderStatus } from '../../lib/orders';
 
-const STATUS_OPTIONS = ['pending', 'confirmed', 'rejected', 'fulfilled', 'cancelled'];
-const PAYMENT_OPTIONS = ['pending', 'paid', 'failed', 'expired'];
+const BRAND = { navy: '#1C2738', gold: '#D4AF37', green: '#1e8e3e' };
+const STATUS = ['pending','confirmed','rejected','fulfilled','cancelled'];
+const PAY    = ['pending','paid','failed','expired'];
 
-const STATUS_STYLES = {
-  pending:   { color: '#8a6d3b', bg: 'rgba(212,175,55,.12)' }, // waiting (ทองหม่น)
-  confirmed: { color: '#1b5e20', bg: 'rgba(76,175,80,.15)'  }, // เขียว
-  rejected:  { color: '#b71c1c', bg: 'rgba(244,67,54,.15)'  }, // แดง
-  fulfilled: { color: '#0d47a1', bg: 'rgba(33,150,243,.15)' }, // น้ำเงิน
-  cancelled: { color: '#424242', bg: 'rgba(0,0,0,.08)'      }, // เทา
+const Pill = ({label, color, bg}) => (
+  <Chip
+    size="small"
+    label={label}
+    sx={{
+      color, bgcolor:bg, fontWeight: 800, textTransform:'capitalize',
+      height: 24, '& .MuiChip-label': { px: 1.2, pt: '1px' }
+    }}
+  />
+);
+
+const statusPill = (s)=>{
+  if (s==='pending')   return <Pill label="Pending"   color="#8a6d3b" bg="rgba(212,175,55,.12)" />;
+  if (s==='confirmed') return <Pill label="Confirmed" color="#0b3d0b" bg="rgba(76,175,80,.18)"  />;
+  if (s==='rejected')  return <Pill label="Rejected"  color="#b71c1c" bg="rgba(244,67,54,.15)"  />;
+  if (s==='fulfilled') return <Pill label="Fulfilled" color="#0d47a1" bg="rgba(33,150,243,.15)" />;
+  if (s==='cancelled') return <Pill label="Cancelled" color="#424242" bg="rgba(0,0,0,.08)"      />;
+  return <Pill label={s||'-'} color="inherit" bg="rgba(0,0,0,.06)" />;
 };
 
-const PAYMENT_STYLES = {
-  pending: { color: '#8a6d3b', bg: 'rgba(212,175,55,.12)' },
-  paid:    { color: '#1b5e20', bg: 'rgba(76,175,80,.15)' },
-  failed:  { color: '#b71c1c', bg: 'rgba(244,67,54,.15)' },
-  expired: { color: '#424242', bg: 'rgba(0,0,0,.08)' },
+const payPill = (s)=>{
+  if (s==='pending')  return <Pill label="Pending" color="#8a6d3b" bg="rgba(212,175,55,.12)" />;
+  if (s==='paid')     return <Pill label="Paid"    color="#0b3d0b" bg="rgba(76,175,80,.18)"  />;
+  if (s==='failed')   return <Pill label="Failed"  color="#b71c1c" bg="rgba(244,67,54,.15)"  />;
+  if (s==='expired')  return <Pill label="Expired" color="#424242" bg="rgba(0,0,0,.08)"      />;
+  return <Pill label={s||'-'} color="inherit" bg="rgba(0,0,0,.06)" />;
 };
 
-const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
+const money = (n)=>Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 
-const fmtCurrency = (value) =>
-  Number(value || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+// ดึง note ลูกค้าจากหลาย key
+const getNote = (o)=>{
+  const cands = [o?.note, o?.customerNote, o?.userNote, o?.meta?.customerNote, o?.payment?.note];
+  return cands.find(v=> typeof v==='string' && v.trim())?.trim() || '';
+};
 
-function StatusChip({ value, styles = STATUS_STYLES, label }) {
-  const s = styles[value] || {};
-  return (
-    <Chip
-      label={label || value}
-      size="small"
-      sx={{
-        fontWeight: 700,
-        color: s.color || 'inherit',
-        bgcolor: s.bg || 'rgba(0,0,0,.06)',
-        textTransform: 'capitalize',
-      }}
-    />
-  );
-}
-
-export default function AdminOrders() {
-  const [orders, setOrders] = useState([]);
-  const [noteDraft, setNoteDraft] = useState({});
-  const [statusDraft, setStatusDraft] = useState({});
-  const [paymentDraft, setPaymentDraft] = useState({});
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+export default function AdminOrders(){
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [savingId, setSavingId] = useState('');      // กำลังบันทึกแถวไหน
-  const [filter, setFilter] = useState('all');       // ฟิลเตอร์สถานะ
+  const [saving, setSaving] = useState('');
+  const [ok, setOk] = useState('');
+  const [err, setErr] = useState('');
 
-  async function loadOrders() {
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    try {
-      const data = await adminListOrders();
-      setOrders(data || []);
-    } catch (err) {
-      setError(err?.response?.data?.message || 'โหลดคำสั่งซื้อไม่สำเร็จ');
-    } finally {
-      setLoading(false);
-    }
+  // filters
+  const [q, setQ] = useState('');
+  const [status, setStatus] = useState('all');
+  const [pay, setPay] = useState('all');
+
+  // drafts
+  const [statusDraft, setStatusDraft] = useState({});
+  const [payDraft, setPayDraft] = useState({});
+
+  // dialog
+  const [view, setView] = useState(null);
+
+  async function load(){
+    setOk(''); setErr(''); setLoading(true);
+    try{
+      const res = await adminListOrders?.({ status, pay, q, page:1, limit:200 }) ?? [];
+      const list = Array.isArray(res) ? res : (Array.isArray(res?.rows) ? res.rows : []);
+      setRows(list);
+    }catch(e){
+      setErr(e?.response?.data?.message || 'โหลดคำสั่งซื้อไม่สำเร็จ');
+    }finally{ setLoading(false); }
   }
+  useEffect(()=>{ load(); /* eslint-disable-next-line */ },[]);
+  useEffect(()=>{ const t=setTimeout(load, 180); return ()=>clearTimeout(t); },[q,status,pay]);
 
-  useEffect(() => { loadOrders(); }, []);
-
-  const filtered = useMemo(() => {
-    if (filter === 'all') return orders;
-    return orders.filter((o) => o.status === filter);
-  }, [orders, filter]);
-
-  const getId = (o) => o?.id || o?._id;
-
-  const canSave = (o) => {
+  const data = useMemo(()=>rows,[rows]);
+  const getId = (o)=>o?.id || o?._id;
+  const canSave = (o)=>{
     const id = getId(o);
-    const newStatus = statusDraft[id] ?? o.status;
-    const newNote = noteDraft[id] ?? o.adminNote ?? '';
-    const newPaymentStatus = paymentDraft[id] ?? o.payment?.status ?? 'pending';
-    const originalPaymentStatus = o.payment?.status ?? 'pending';
-    // มีการเปลี่ยนแปลงหรือไม่
-    return (
-      newStatus !== o.status ||
-      newNote !== (o.adminNote ?? '') ||
-      newPaymentStatus !== originalPaymentStatus
-    );
+    const ns = statusDraft[id] ?? o.status;
+    const np = payDraft[id]    ?? o.payment?.status ?? 'pending';
+    return ns !== o.status || np !== (o.payment?.status ?? 'pending');
   };
 
-  async function handleUpdate(order) {
-    const id = getId(order);
-    setError('');
-    setSuccess('');
-    setSavingId(id);
-    try {
-      const statusValue = statusDraft[id] ?? order.status;
-      const noteValue = noteDraft[id] ?? order.adminNote ?? '';
-      const paymentValue = paymentDraft[id] ?? order.payment?.status ?? 'pending';
-
-      const payload = {};
-      if (statusValue !== order.status) payload.status = statusValue;
-      if (noteValue !== (order.adminNote ?? '')) payload.adminNote = noteValue;
-      if (paymentValue !== (order.payment?.status ?? 'pending')) payload.paymentStatus = paymentValue;
-
-      if (!Object.keys(payload).length) {
-        setSavingId('');
-        return;
-      }
-
-      await adminUpdateOrderStatus(id, payload);
-      setSuccess(`อัปเดตคำสั่งซื้อ #${id} เรียบร้อย`);
-      await loadOrders();
-      setStatusDraft((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-      setNoteDraft((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-      setPaymentDraft((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-    } catch (err) {
-      setError(err?.response?.data?.message || 'อัปเดตไม่ได้');
-    } finally {
-      setSavingId('');
-    }
+  async function handleSave(o){
+    const id = getId(o);
+    setSaving(id); setOk(''); setErr('');
+    try{
+      const ns = statusDraft[id] ?? o.status;
+      const np = payDraft[id]    ?? o.payment?.status ?? 'pending';
+      const body = {};
+      if (ns !== o.status) body.status = ns;
+      if (np !== (o.payment?.status ?? 'pending')) body.paymentStatus = np;
+      if (!Object.keys(body).length){ setSaving(''); return; }
+      await adminUpdateOrderStatus(id, body);
+      setOk(`บันทึกเรียบร้อย (#${id})`);
+      await load();
+      setStatusDraft(p=>{ const n={...p}; delete n[id]; return n; });
+      setPayDraft(p=>{ const n={...p}; delete n[id]; return n; });
+    }catch(e){
+      setErr(e?.response?.data?.message || 'อัปเดตไม่ได้');
+    }finally{ setSaving(''); }
   }
 
   return (
-    <Paper sx={{ p: 0, overflow: 'hidden' ,width: '80vw' }}>
-      {/* Header / Filters */}
-      <Toolbar
-        sx={{
-          px: 2, py: 1.5, gap: 1.5,
-          justifyContent: 'space-between',
-          bgcolor: 'rgba(28,39,56,0.03)',
-          borderBottom: '1px solid rgba(0,0,0,.06)',
-        }}
-      >
-        <Stack direction="row" alignItems="baseline" spacing={2}>
-          <Typography variant="h6" fontWeight={900} sx={{ color: BRAND.navy }}>
-            จัดการคำสั่งซื้อ
-          </Typography>
-          <Divider flexItem orientation="vertical" />
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <FilterAltRoundedIcon fontSize="small" />
-            <Select
-              size="small"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              sx={{ minWidth: 160, textTransform: 'capitalize' }}
-            >
-              <MenuItem value="all">All statuses</MenuItem>
-              {STATUS_OPTIONS.map((s) => (
-                <MenuItem key={s} value={s} sx={{ textTransform: 'capitalize' }}>
-                  {s}
-                </MenuItem>
-              ))}
-            </Select>
-          </Stack>
-        </Stack>
+    <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
+      {/* HEADER */}
+      <Toolbar sx={{ px: 2, py: 1, gap: 1.25, borderBottom:'1px solid rgba(0,0,0,.06)', bgcolor:'#fafafb' }}>
+        <Typography variant="h6" fontWeight={900} sx={{ color: BRAND.navy, mr: 1 }}>
+          รายการคำสั่งซื้อ
+        </Typography>
 
-        <IconButton onClick={loadOrders} title="รีเฟรช" disabled={loading}>
-          {loading ? <CircularProgress size={20} /> : <RefreshIcon />}
+        <TextField
+          size="small" placeholder="ค้นหา: ชื่อ / อีเมล / ออเดอร์ / REF"
+          value={q} onChange={(e)=>setQ(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="start"><SearchRoundedIcon fontSize="small" /></InputAdornment>
+          }}
+          sx={{ minWidth: 320 }}
+        />
+
+        <Select size="small" value={status} onChange={(e)=>setStatus(e.target.value)}>
+          <MenuItem value="all">ทุกสถานะ</MenuItem>
+          {STATUS.map(s=> <MenuItem key={s} value={s} sx={{ textTransform:'capitalize' }}>{s}</MenuItem>)}
+        </Select>
+        <Select size="small" value={pay} onChange={(e)=>setPay(e.target.value)}>
+          <MenuItem value="all">ทุก payments</MenuItem>
+          {PAY.map(s=> <MenuItem key={s} value={s} sx={{ textTransform:'capitalize' }}>{s}</MenuItem>)}
+        </Select>
+
+        <IconButton onClick={load} title="รีเฟรช" sx={{ ml: 'auto' }}>
+          {loading ? <CircularProgress size={20}/> : <RefreshIcon/>}
         </IconButton>
       </Toolbar>
 
       <Box sx={{ px: 2, pt: 2 }}>
-        {!!success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-        {!!error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {!!ok &&  <Alert severity="success" sx={{ mb: 1 }}>{ok}</Alert>}
+        {!!err && <Alert severity="error"   sx={{ mb: 1 }}>{err}</Alert>}
       </Box>
 
       <Box sx={{ px: 2, pb: 2 }}>
-        <Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
+        <Table size="small" sx={{ tableLayout:'fixed' }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: '34%' }}>
-                รายละเอียดคำสั่งซื้อ
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: '33%' }}>
-                สถานะ &amp; การชำระเงิน
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: BRAND.navy, width: '33%' }}>
-                หมายเหตุ &amp; การจัดการ
-              </TableCell>
+              <TableCell sx={{ fontWeight:700, color:BRAND.navy, width:'32%' }}>รายละเอียด</TableCell>
+              <TableCell sx={{ fontWeight:700, color:BRAND.navy, width:'12%' }}>ยอดรวม</TableCell>
+              <TableCell sx={{ fontWeight:700, color:BRAND.navy, width:'20%' }}>สถานะ</TableCell>
+              <TableCell sx={{ fontWeight:700, color:BRAND.navy, width:'20%' }}>การชำระเงิน</TableCell>
+              <TableCell sx={{ fontWeight:700, color:BRAND.navy, width:'10%' }}>REF</TableCell>
+              <TableCell sx={{ fontWeight:700, color:BRAND.navy }} align="right">จัดการ</TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {filtered.map((order) => {
-              const id = getId(order);
-              const createdAt = order?.createdAt ? new Date(order.createdAt) : null;
-              const statusValue = statusDraft[id] ?? order.status;
-              const paymentValue = paymentDraft[id] ?? order.payment?.status ?? 'pending';
-              const noteValue = noteDraft[id] ?? order.adminNote ?? '';
-              const userNote =
-                typeof order.note === 'string' && order.note.trim() ? order.note.trim() : '';
-              const saving = savingId === id;
+            {data.map(o=>{
+              const id   = getId(o);
+              const when = o.createdAt ? new Date(o.createdAt).toLocaleString() : '-';
+              const st   = statusDraft[id] ?? o.status;
+              const pst  = payDraft[id]    ?? o.payment?.status ?? 'pending';
+              const note = getNote(o);
+              const changed = canSave(o);
 
               return (
-                <TableRow
-                  key={id}
-                  hover
-                  sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,.02)' }, transition: 'background .15s' }}
-                >
-                  <TableCell sx={{ width: '34%', verticalAlign: 'top', pr: 2 }}>
-                    <Stack spacing={1}>
-                      <Stack spacing={0.25}>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 700, wordBreak: 'break-word' }}
-                        >
+                <TableRow key={id} hover sx={{ '&:hover': { bgcolor:'rgba(0,0,0,.02)' } }}>
+                  {/* รายละเอียด */}
+                  <TableCell sx={{ verticalAlign:'top', pr: 2 }}>
+                    <Stack spacing={0.5}>
+                      <Stack direction="row" spacing={0.75} alignItems="center">
+                        <Typography variant="body2" sx={{ fontFamily:'ui-monospace,monospace', fontWeight:800 }}>
                           {id}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {createdAt ? createdAt.toLocaleString() : '-'}
-                        </Typography>
+                        {note && (
+                          <IconButton size="small" title="หมายเหตุจากลูกค้า" onClick={()=>setView(o)} sx={{ p: .25 }}>
+                            <NotesRoundedIcon fontSize="small" />
+                          </IconButton>
+                        )}
                       </Stack>
-                      <Stack spacing={0.25}>
-                        <Typography variant="body2">{order.user?.name || '-'}</Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ wordBreak: 'break-word' }}
-                        >
-                          {order.user?.email || '-'}
-                        </Typography>
-                      </Stack>
-                      <Stack spacing={0.25}>
-                        <Typography variant="caption" color="text.secondary">
-                          ยอดสุทธิ
-                        </Typography>
-                        <Typography variant="subtitle1" fontWeight={900}>
-                          ฿ {fmtCurrency(order.total)}
-                        </Typography>
-                      </Stack>
+                      <Typography variant="caption" color="text.secondary">{when}</Typography>
+                      <Typography variant="body2">{o.user?.name || '-'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{o.user?.email || '-'}</Typography>
                     </Stack>
                   </TableCell>
 
-                  <TableCell sx={{ width: '33%', verticalAlign: 'top', pr: 2 }}>
-                    <Stack spacing={1.25}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          สถานะคำสั่งซื้อ
-                        </Typography>
-                        <Stack spacing={0.75}>
-                          <StatusChip value={statusValue} />
-                          <Select
-                            size="small"
-                            fullWidth
-                            sx={{ textTransform: 'capitalize', maxWidth: 200 }}
-                            value={statusValue}
-                            onChange={(e) =>
-                              setStatusDraft((prev) => ({ ...prev, [id]: e.target.value }))
-                            }
-                          >
-                            {STATUS_OPTIONS.map((status) => (
-                              <MenuItem
-                                key={status}
-                                value={status}
-                                sx={{ textTransform: 'capitalize' }}
-                              >
-                                {status}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </Stack>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          สถานะการชำระเงิน
-                        </Typography>
-                        <Stack spacing={0.75}>
-                          <StatusChip value={paymentValue} styles={PAYMENT_STYLES} />
-                          <Select
-                            size="small"
-                            fullWidth
-                            sx={{ textTransform: 'capitalize', maxWidth: 200 }}
-                            value={paymentValue}
-                            onChange={(e) =>
-                              setPaymentDraft((prev) => ({ ...prev, [id]: e.target.value }))
-                            }
-                          >
-                            {PAYMENT_OPTIONS.map((status) => (
-                              <MenuItem
-                                key={status}
-                                value={status}
-                                sx={{ textTransform: 'capitalize' }}
-                              >
-                                {status}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </Stack>
-                      </Box>
-                      {order.payment?.reference && (
-                        <Typography variant="caption" color="text.secondary">
-                          REF: {order.payment.reference}
-                        </Typography>
-                      )}
-                      {order.payment?.target && (
-                        <Typography variant="caption" color="text.secondary">
-                          PromptPay: {order.payment.targetFormatted || order.payment.target}
-                        </Typography>
-                      )}
+                  {/* ยอดรวม */}
+                  <TableCell sx={{ verticalAlign:'top' }}>
+                    <Typography variant="subtitle1" fontWeight={900}>฿ {money(o.total)}</Typography>
+                  </TableCell>
+
+                  {/* สถานะ: pill อยู่ด้านบน + select ด้านล่าง (แบบในภาพ) */}
+                  <TableCell sx={{ verticalAlign:'top' }}>
+                    <Stack spacing={0.75}>
+                      {statusPill(st)}
+                      <Select
+                        size="small"
+                        value={st}
+                        onChange={(e)=>setStatusDraft(p=>({ ...p, [id]: e.target.value }))}
+                        sx={{ maxWidth: 220, textTransform:'capitalize' }}
+                      >
+                        {STATUS.map(s=><MenuItem key={s} value={s} sx={{ textTransform:'capitalize' }}>{s}</MenuItem>)}
+                      </Select>
                     </Stack>
                   </TableCell>
 
-                  <TableCell sx={{ width: '33%', verticalAlign: 'top' }}>
-                    <Stack spacing={1.25}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          หมายเหตุจากลูกค้า
-                        </Typography>
-                        <Box
-                          sx={{
-                            mt: 0.75,
-                            p: userNote ? 1 : 0.75,
-                            bgcolor: userNote ? 'rgba(28,39,56,.04)' : 'rgba(28,39,56,.02)',
-                            borderRadius: 1.5,
-                            border: '1px solid rgba(28,39,56,.08)',
-                            minHeight: 48,
-                            maxHeight: 140,
-                            overflowY: 'auto',
-                            color: userNote ? 'inherit' : 'text.secondary',
-                            fontSize: 13,
-                            lineHeight: 1.5,
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          {userNote || 'ไม่มีหมายเหตุจากลูกค้า'}
-                        </Box>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          โน้ตสำหรับทีมงาน
-                        </Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          multiline
-                          minRows={3}
-                          maxRows={6}
-                          placeholder="เพิ่มหมายเหตุสำหรับอัปเดตทีม"
-                          value={noteValue}
-                          onChange={(e) =>
-                            setNoteDraft((prev) => ({ ...prev, [id]: e.target.value }))
-                          }
-                        />
-                      </Box>
-                      <Stack direction="row" justifyContent="flex-end">
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<SaveRoundedIcon />}
-                          onClick={() => handleUpdate(order)}
-                          disabled={!canSave(order) || saving}
-                          sx={{
-                            bgcolor: BRAND.gold,
-                            color: '#111',
-                            fontWeight: 700,
-                            borderRadius: 999,
-                            px: 2,
-                            '&:hover': { bgcolor: '#C6A132' },
-                          }}
-                        >
-                          {saving ? 'กำลังบันทึก…' : 'บันทึก'}
-                        </Button>
-                      </Stack>
+                  {/* การชำระเงิน */}
+                  <TableCell sx={{ verticalAlign:'top' }}>
+                    <Stack spacing={0.75}>
+                      {payPill(pst)}
+                      <Select
+                        size="small"
+                        value={pst}
+                        onChange={(e)=>setPayDraft(p=>({ ...p, [id]: e.target.value }))}
+                        sx={{ maxWidth: 220, textTransform:'capitalize' }}
+                      >
+                        {PAY.map(s=><MenuItem key={s} value={s} sx={{ textTransform:'capitalize' }}>{s}</MenuItem>)}
+                      </Select>
+                      <Typography variant="caption" color="text.secondary">
+                        ช่องทาง: {o.payment?.method || '—'}
+                      </Typography>
                     </Stack>
+                  </TableCell>
+
+                  {/* REF + ปุ่ม “ดู” สีเขียวแบบกะทัดรัด (ไม่ทับตัวเลข) */}
+                  <TableCell sx={{ verticalAlign:'middle' }}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                      <Typography
+                        noWrap
+                        sx={{ maxWidth: 90, overflow:'hidden', textOverflow:'ellipsis', fontFamily:'ui-monospace,monospace' }}
+                        title={o.payment?.reference || '-'}
+                      >
+                        {o.payment?.reference || '-'}
+                      </Typography>
+                      <Button
+                        size="small"
+                        onClick={()=>setView(o)}
+                        startIcon={<VisibilityRoundedIcon fontSize="small" />}
+                        sx={{
+                          minWidth: 'fit-content',
+                          px: 1.1,
+                          py: 0.2,
+                          borderRadius: 999,
+                          color: BRAND.green,
+                          bgcolor: 'rgba(30,142,62,.10)',
+                          textTransform: 'none',
+                          '&:hover': { bgcolor: 'rgba(30,142,62,.18)' },
+                          '& .MuiButton-startIcon': { mr: 0.5 },
+                        }}
+                      >
+                        ดู
+                      </Button>
+                    </Stack>
+                  </TableCell>
+
+                  {/* จัดการ */}
+                  <TableCell align="right" sx={{ verticalAlign:'top' }}>
+                    <Button
+                      size="small"
+                      variant={changed ? 'contained' : 'outlined'}
+                      startIcon={<SaveRoundedIcon />}
+                      disabled={!changed || saving===id}
+                      onClick={()=>handleSave(o)}
+                      sx={{
+                        bgcolor: changed ? BRAND.gold : 'transparent',
+                        color: changed ? '#111' : 'inherit',
+                        borderRadius: 999,
+                        px: 2,
+                        fontWeight: 800,
+                        '&:hover': changed ? { bgcolor: '#C6A132' } : {},
+                      }}
+                    >
+                      {saving===id ? 'บันทึก…' : 'บันทึก'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               );
             })}
 
-            {!filtered.length && (
+            {!data.length && (
               <TableRow>
-                <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
-                  <Typography color="text.secondary">
-                    {orders.length ? 'ไม่พบรายการตามเงื่อนไขที่เลือก' : 'ยังไม่มีคำสั่งซื้อ'}
-                  </Typography>
+                <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  ไม่พบรายการ
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </Box>
+
+      {/* Dialog: รายละเอียด + note ลูกค้า */}
+      <Dialog open={!!view} onClose={()=>setView(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>รายละเอียดคำสั่งซื้อ</DialogTitle>
+        <DialogContent dividers>
+          {view && (
+            <Stack spacing={1.2}>
+              <Typography variant="body2" sx={{ fontFamily:'ui-monospace,monospace' }}>
+                {getId(view)}
+              </Typography>
+              <Typography variant="body2">
+                ผู้สั่งซื้อ: {view.user?.name || '-'} ({view.user?.email || '-'})
+              </Typography>
+              <Typography variant="body2">ยอดรวม: ฿ {money(view.total)}</Typography>
+              <Typography variant="body2">
+                ช่องทาง: {view.payment?.method || '—'} • REF: {view.payment?.reference || '—'}
+              </Typography>
+              {!!getNote(view) && (
+                <Box sx={{ mt:.5, p:1, borderRadius:1, bgcolor:'rgba(28,39,56,.04)', border:'1px solid rgba(28,39,56,.08)' }}>
+                  <Typography variant="caption" color="text.secondary">หมายเหตุจากลูกค้า</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace:'pre-wrap' }}>{getNote(view)}</Typography>
+                </Box>
+              )}
+              {!!view.shippingAddress && (
+                <Box sx={{ mt:.5 }}>
+                  <Typography variant="caption" color="text.secondary">ที่อยู่จัดส่ง</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace:'pre-wrap' }}>{view.shippingAddress}</Typography>
+                </Box>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=>setView(null)}>ปิด</Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 }
