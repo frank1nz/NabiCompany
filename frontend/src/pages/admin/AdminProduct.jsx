@@ -2,10 +2,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Stack, Paper, Typography, Toolbar, Box, TextField, Select, MenuItem,
-  IconButton, Divider, Alert, CircularProgress, Button
+  IconButton, Divider, Alert, CircularProgress
 } from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import SearchIcon from '@mui/icons-material/Search';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+
 
 import {
   adminListProducts,
@@ -30,7 +34,15 @@ const initialForm = {
   tags: '',
 };
 
-const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
+// ===== Blue Theme (เฉพาะงานตกแต่ง) =====
+const BRAND = {
+  navy: '#0B2B54',
+  blue: '#1D4ED8',
+  sky: '#0EA5E9',
+  soft: '#E6F3FF',
+  border: 'rgba(2,132,199,.18)',
+  ink: '#0F172A',
+};
 
 const normalizeTagsInput = (value) => {
   if (Array.isArray(value)) {
@@ -241,42 +253,105 @@ export default function AdminProducts() {
   return (
     <Stack spacing={3}>
       {/* Header / Filters */}
-      <Paper sx={{ p: 0, overflow: 'hidden' }}>
+      <Paper
+        sx={{
+          p: 0,
+          overflow: 'hidden',
+          borderRadius: 3,
+          border: `1px solid ${BRAND.border}`,
+          boxShadow: '0 6px 24px rgba(2,132,199,.08)',
+          bgcolor: '#fff'
+        }}
+      >
         <Toolbar
           sx={{
-            px: 2, py: 1.5, gap: 1.5,
+            px: 2, py: 1.25, gap: 1.25,
             justifyContent: 'space-between',
-            bgcolor: 'rgba(28,39,56,0.03)',
-            borderBottom: '1px solid rgba(0,0,0,.06)',
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            bgcolor: `linear-gradient(90deg, ${BRAND.soft}, #ffffff)`,
+            borderBottom: `1px solid ${BRAND.border}`,
           }}
         >
           <Stack direction="row" alignItems="center" spacing={2}>
-            <Typography variant="h6" fontWeight={900} sx={{ color: BRAND.navy }}>
-              รายการสินค้า
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Box
+                sx={{
+                  width: 36, height: 36, borderRadius: 2,
+                  display: 'grid', placeItems: 'center',
+                  background: `linear-gradient(145deg, ${BRAND.sky}, ${BRAND.blue})`,
+                  color: '#fff'
+                }}
+              >
+                <DescriptionOutlinedIcon fontSize="small" />
+              </Box>
+              <Typography
+                variant="h6"
+                fontWeight={900}
+                sx={{ color: BRAND.ink, letterSpacing: .2 }}
+              >
+                รายการสินค้า
+              </Typography>
+            </Stack>
+
             <Divider flexItem orientation="vertical" />
+
             <TextField
               size="small"
               placeholder="ค้นหาชื่อ/คำอธิบาย/แท็ก"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              sx={{ minWidth: 260 }}
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                minWidth: 280,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  backgroundColor: '#fff',
+                  '& fieldset': { borderColor: BRAND.border },
+                  '&:hover fieldset': { borderColor: BRAND.sky },
+                  '&.Mui-focused fieldset': { borderColor: BRAND.blue, boxShadow: '0 0 0 2px rgba(29,78,216,.08)' },
+                },
+              }}
             />
+
             <Select
               size="small"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              sx={{ minWidth: 160 }}
+              sx={{
+                minWidth: 160,
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: BRAND.border },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: BRAND.sky },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: BRAND.blue },
+                backgroundColor: '#fff'
+              }}
             >
               <MenuItem value="all">ทุกสถานะ</MenuItem>
               <MenuItem value="active">active</MenuItem>
               <MenuItem value="inactive">inactive</MenuItem>
             </Select>
+
             <Select
               size="small"
               value={visibilityFilter}
               onChange={(e) => setVisibilityFilter(e.target.value)}
-              sx={{ minWidth: 160 }}
+              sx={{
+                minWidth: 180,
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: BRAND.border },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: BRAND.sky },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: BRAND.blue },
+                backgroundColor: '#fff'
+              }}
             >
               <MenuItem value="all">ทุก visibility</MenuItem>
               <MenuItem value="public">public</MenuItem>
@@ -285,18 +360,59 @@ export default function AdminProducts() {
           </Stack>
 
           <Stack direction="row" spacing={1}>
-            <IconButton onClick={loadProducts} disabled={loading} title="รีเฟรช">
+            <IconButton
+              onClick={loadProducts}
+              disabled={loading}
+              title="รีเฟรช"
+              sx={{
+                border: `1px solid ${BRAND.border}`,
+                borderRadius: 2,
+                bgcolor: '#fff',
+                '&:hover': { bgcolor: BRAND.soft, borderColor: BRAND.sky }
+              }}
+            >
               {loading ? <CircularProgress size={20} /> : <RefreshIcon />}
             </IconButton>
           </Stack>
         </Toolbar>
 
         <Box sx={{ px: 2, py: 2 }}>
-          {!!success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-          {!!error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {!!success && (
+            <Alert
+              severity="success"
+              sx={{
+                mb: 2,
+                borderRadius: 2,
+                border: `1px solid ${BRAND.border}`,
+                bgcolor: '#F0FDF4'
+              }}
+            >
+              {success}
+            </Alert>
+          )}
+          {!!error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 2,
+                borderRadius: 2,
+                border: `1px solid ${BRAND.border}`
+              }}
+            >
+              {error}
+            </Alert>
+          )}
 
           {/* LIST */}
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderRadius: 3,
+              borderColor: BRAND.border,
+              boxShadow: '0 2px 10px rgba(2,132,199,.05)',
+            }}
+          >
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
                 <CircularProgress />
@@ -314,12 +430,31 @@ export default function AdminProducts() {
       </Paper>
 
       {/* CREATE */}
-      <Paper sx={{ p: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-          <AddRoundedIcon />
-          <Typography variant="h6">เพิ่มสินค้า</Typography>
+      <Paper
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          border: `1px solid ${BRAND.border}`,
+          boxShadow: '0 6px 24px rgba(2,132,199,.06)',
+          bgcolor: '#fff'
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={1.25} mb={2}>
+          <Box
+            sx={{
+              width: 28, height: 28, borderRadius: 1.5,
+              display: 'grid', placeItems: 'center',
+              background: `linear-gradient(145deg, ${BRAND.sky}, ${BRAND.blue})`,
+              color: '#fff'
+            }}
+          >
+            <AddRoundedIcon fontSize="small" />
+          </Box>
+          <Typography variant="h6" sx={{ color: BRAND.ink, fontWeight: 800 }}>
+            เพิ่มสินค้า
+          </Typography>
           {saving && (
-            <Box sx={{ ml: 1 }}><CircularProgress size={16} /></Box>
+            <Box sx={{ ml: .5 }}><CircularProgress size={16} /></Box>
           )}
         </Stack>
 
