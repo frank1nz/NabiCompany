@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import {
   Container, Paper, Stack, Grid, TextField, Typography, Alert, Button,
   InputLabel, Link as MuiLink, IconButton, InputAdornment, Checkbox,
-  FormControlLabel, Box, Divider,
+  FormControlLabel, Box, Divider, useTheme,
 } from '@mui/material';
+import { alpha, darken } from '@mui/material/styles';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
@@ -16,8 +17,6 @@ import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../lib/auth';
 import logo from '../assets/nabi_logo_no_bg.png';
-
-const BRAND = { gold: '#D4AF37', blue1: '#5DB3FF', blue2: '#257CFF' };
 const MAX_IMG_MB = 5;
 const ACCEPT = 'image/jpeg,image/png,image/webp';
 
@@ -42,6 +41,15 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
+  const primaryMain = theme.palette.primary.main;
+  const primaryLight = brand?.blue1 || theme.palette.primary.light;
+  const primaryGradient = brand?.blue2 || primaryMain;
+  const fieldBg = alpha(primaryLight, 0.18);
+  const textareaBg = alpha(primaryMain, 0.08);
+  const uploadBg = theme.palette.background.paper;
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -111,10 +119,10 @@ export default function Register() {
   const inputCapsuleSx = {
     '& .MuiOutlinedInput-root': {
       borderRadius: RADIUS,
-      bgcolor: '#EAF3FF',
+      bgcolor: fieldBg,
       '& fieldset': { borderColor: 'transparent' },
       '&:hover fieldset': { borderColor: 'transparent' },
-      '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
+      '&.Mui-focused fieldset': { borderColor: primaryMain },
       px: 1,
     },
   };
@@ -139,12 +147,12 @@ export default function Register() {
   return (
     <Box
       sx={{
-        minHeight: 'calc(100vh - 64px)',
+        minHeight: 'calc(80vh - 64px)',
         display: 'grid',
         placeItems: 'center',
-        py: { xs: 3, md: 6 },
-        px: 2,
-        bgcolor: '#F5F7FB',
+        py: { xs: 3, md: 0},
+        px: 0,
+      
       }}
     >
       <Container maxWidth="md" disableGutters>
@@ -167,7 +175,7 @@ export default function Register() {
               justifyContent: 'center',
               position: 'relative',
               p: 1,
-              background: `linear-gradient(180deg, ${BRAND.blue1} 0%, ${BRAND.blue2} 100%)`,
+              background: `linear-gradient(180deg, ${primaryLight} 0%, ${primaryGradient} 100%)`,
               color: '#fff',
             }}
           >
@@ -194,7 +202,7 @@ export default function Register() {
             onSubmit={onSubmit}
             sx={{
               p: { xs: 2.5, md: 4 },
-              bgcolor: '#fff',
+              bgcolor: theme.palette.background.paper,
               maxWidth: 720,
               mx: 'auto',
               width: '100%',
@@ -202,7 +210,12 @@ export default function Register() {
           >
             <Stack spacing={3}>
               <Box>
-                <Typography variant="h5" fontWeight={900} color="#2B4A73" sx={{ mb: .25 }}>
+                <Typography
+                  variant="h5"
+                  fontWeight={900}
+                  color={brand?.navy || theme.palette.text.primary}
+                  sx={{ mb: 0.25 }}
+                >
                   Create Account
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -213,16 +226,18 @@ export default function Register() {
               {error && <Alert severity="error">{error}</Alert>}
 
               {/* ===== ฟอร์ม: 2 ช่องต่อแถว ===== */}
-              <Grid container columns={12} columnSpacing={4} rowSpacing={3}>
+              <Grid container columns={12} columnSpacing={4} rowSpacing={1.5}>
                 <Grid item xs={12} md={6}>
                   <TextField
                     label="ชื่อ-นามสกุล"
                     value={form.name}
+                    placeholder='ชื่อของคุณ'
                     onChange={(e) => setField('name', e.target.value)}
                     required fullWidth size="medium"
                     sx={bigFieldSx}
                     InputProps={{ startAdornment: (<InputAdornment position="start"><PersonOutlined /></InputAdornment>) }}
                   />
+             
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -240,6 +255,7 @@ export default function Register() {
                 <Grid item xs={12} md={6}>
                   <TextField
                     label="อีเมล" type="email" value={form.email}
+                    placeholder='อีเมลของคุณ'
                     onChange={(e) => setField('email', e.target.value)}
                     required fullWidth error={!!form.email && !emailOk}
                     helperText={form.email && !emailOk ? 'รูปแบบอีเมลไม่ถูกต้อง' : ' '}
@@ -252,6 +268,7 @@ export default function Register() {
                     <TextField
                       label="รหัสผ่าน"
                       type={showPw ? 'text' : 'password'}
+                       placeholder='รหัสผ่านของคุณ'
                       value={form.password}
                       onChange={(e) => setField('password', e.target.value)}
                       required
@@ -260,7 +277,7 @@ export default function Register() {
                       size="medium"
                       sx={{
                         ...bigFieldSx,                // คงสไตล์พื้นฐาน
-                        width: 215,                   // ← ปรับความกว้างที่นี่ เช่น 360, 400, '80%' ได้หมด
+                        width: 230,                   // ← ปรับความกว้างที่นี่ เช่น 360, 400, '80%' ได้หมด
                         '& .MuiOutlinedInput-root': { // merge ของเดิมก่อนค่อยใส่ใหม่
                           ...bigFieldSx['& .MuiOutlinedInput-root'],
                           minHeight: 60,              // ← ปรับความสูงช่อง
@@ -274,7 +291,7 @@ export default function Register() {
                           </InputAdornment>
                         ),
                         endAdornment: (
-                          <InputAdornment position="end">
+                          <InputAdornment position="end" style={{paddingRight:10}}>
                             <IconButton onClick={() => setShowPw((s) => !s)} edge="end">
                               {showPw ? <VisibilityOff /> : <Visibility />}
                             </IconButton>
@@ -287,6 +304,7 @@ export default function Register() {
                 <Grid item xs={12} md={6}>
                   <TextField
                     label="เบอร์โทรศัพท์" value={form.phone}
+                    placeholder='เบอร์ของคุณ'
                     onChange={(e) => setField('phone', e.target.value)}
                     fullWidth error={!!form.phone && !phoneOk}
                     helperText={form.phone && !phoneOk ? 'กรุณากรอกเฉพาะตัวเลข/สัญลักษณ์ที่เกี่ยวข้อง' : ' '}
@@ -353,7 +371,7 @@ export default function Register() {
                       '& .MuiOutlinedInput-root': {
                         ...bigFieldSx['& .MuiOutlinedInput-root'],
                         borderRadius: RADIUS,
-                        bgcolor: '#F3F7FF',
+                        bgcolor: textareaBg,
                       },
                       '& textarea': {
                         resize: 'both',
@@ -373,7 +391,7 @@ export default function Register() {
               <Grid container spacing={2} justifyContent="center">
                 <Grid item xs={12} md={6}>
                   <InputLabel sx={{ mb: 1 }}>บัตรประชาชน (≤ {MAX_IMG_MB}MB)</InputLabel>
-                  <Box sx={{ border: '1px dashed rgba(0,0,0,.25)', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#fcfcfc', maxWidth: 520, mx: 'auto' }}>
+                  <Box sx={{ border: '1px dashed rgba(0,0,0,.25)', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', gap: 2, bgcolor: uploadBg, maxWidth: 520, mx: 'auto' }}>
                     <Button variant="outlined" startIcon={<UploadFileOutlined />} component="label">
                       เลือกไฟล์
                       <input hidden type="file" accept={ACCEPT} onChange={handleFile('idCardImage')} />
@@ -388,7 +406,7 @@ export default function Register() {
 
                 <Grid item xs={12} md={6}>
                   <InputLabel sx={{ mb: 1 }}>รูปถ่ายถือบัตร (≤ {MAX_IMG_MB}MB)</InputLabel>
-                  <Box sx={{ border: '1px dashed rgba(0,0,0,.25)', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#fcfcfc', maxWidth: 520, mx: 'auto' }}>
+                  <Box sx={{ border: '1px dashed rgba(0,0,0,.25)', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', gap: 2, bgcolor: uploadBg, maxWidth: 520, mx: 'auto' }}>
                     <Button variant="outlined" startIcon={<UploadFileOutlined />} component="label">
                       เลือกไฟล์
                       <input hidden type="file" accept={ACCEPT} onChange={handleFile('selfieWithId')} />
@@ -407,7 +425,13 @@ export default function Register() {
                 label={
                   <Typography variant="body2">
                     ฉันยอมรับ{' '}
-                    <MuiLink component={Link} to="/terms" target="_blank" underline="hover" sx={{ color: BRAND.gold }}>
+                    <MuiLink
+                      component={Link}
+                      to="/terms"
+                      target="_blank"
+                      underline="hover"
+                      sx={{ color: accent }}
+                    >
                       ข้อกำหนดและนโยบายความเป็นส่วนตัว
                     </MuiLink>
                   </Typography>
@@ -422,8 +446,9 @@ export default function Register() {
                   sx={{
                     py: 1.1, px: 6, fontWeight: 900,
                     borderRadius: 999, textTransform: 'none',
-                    bgcolor: '#2F7BFF', boxShadow: '0 8px 16px rgba(47,123,255,.25)',
-                    '&:hover': { bgcolor: '#1F6BEE' },
+                    bgcolor: primaryMain,
+                    boxShadow: `0 8px 16px ${alpha(primaryMain, 0.25)}`,
+                    '&:hover': { bgcolor: darken(primaryMain, 0.08) },
                   }}
                 >
                   {loading ? 'กำลังส่งข้อมูล…' : 'สร้างบัญชี'}
@@ -432,7 +457,12 @@ export default function Register() {
 
               <Typography variant="body2" color="text.secondary" align="center">
                 มีบัญชีแล้ว?{' '}
-                <MuiLink component={Link} to="/login" underline="hover" sx={{ fontWeight: 700 }}>
+                <MuiLink
+                  component={Link}
+                  to="/login"
+                  underline="hover"
+                  sx={{ fontWeight: 700, color: accent }}
+                >
                 เข้าสู่ระบบ
                 </MuiLink>
               </Typography>

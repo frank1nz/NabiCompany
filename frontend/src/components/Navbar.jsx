@@ -11,21 +11,24 @@ import {
   Tooltip,
   Paper,
   Divider,
+  useTheme,
 } from '@mui/material';
+import { darken } from '@mui/material/styles';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../store/authStore';
 import { useEffect, useState } from 'react';
 import { useCart } from '../store/cartStore';
-
-// 🎨 สีประจำแบรนด์
-const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
+import logo from '../assets/nabi_logo_no_bg.png';
 
 export default function Navbar() {
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
   const auth = useAuth() || {};
   const user = auth.user || null;
-  const logout = auth.logout || (() => {});
+  const logout = auth.logout || (() => { });
 
   const isLoggedIn = !!user;
   const isAdmin = user?.role === 'admin';
@@ -45,7 +48,7 @@ export default function Navbar() {
   useEffect(() => {
     if (!isLoggedIn || isAdmin) return;
     if (cartLastUpdated !== null) return;
-    loadCart()?.catch(() => {});
+    loadCart()?.catch(() => { });
   }, [isLoggedIn, isAdmin, cartLastUpdated, loadCart]);
 
   // 🔽 สำหรับเมนู admin dropdown
@@ -84,23 +87,32 @@ export default function Navbar() {
       >
         <Toolbar disableGutters sx={{ width: '100%' }}>
           {/* 🌿 โลโก้แบรนด์ */}
+
           <Typography
+
             variant="h6"
+            paddingRight={1}
             component={Link}
             to="/"
-            sx={{
-              fontWeight: 900,
-              color: BRAND.navy,
-              textDecoration: 'none',
-              letterSpacing: 0.6,
-              flexGrow: 1,
-              '&:hover': { color: BRAND.gold },
-              transition: 'color 0.25s',
-            }}
           >
-            {/* ❌ เดิม: NABI SPIRITS (user)
-                ✅ ใหม่: แสดงเฉพาะชื่อแบรนด์เท่านั้น */}
-            NABI SPIRITS
+            <Box
+              sx={{
+                width: 50,
+                height: 50,
+                borderRadius: 3,
+                bgcolor: 'rgba(255,255,255,.25)',
+                display: 'grid',
+                placeItems: 'center',
+                backdropFilter: 'blur(2px)',
+                overflow: 'hidden',
+              }}
+            >
+              <img
+                src={logo}
+                alt="Nabi Spirits Logo"
+                style={{ width: '80%', height: '80%', objectFit: 'contain' }}
+              />
+            </Box>
           </Typography>
 
           {/* 🧭 แถบเมนูนำทาง */}
@@ -134,8 +146,8 @@ export default function Navbar() {
                     aria-haspopup="true"
                     aria-expanded={open ? 'true' : undefined}
                     sx={{
-                      color: BRAND.navy,
-                      '&:hover': { color: BRAND.gold },
+                      color: brand?.navy || theme.palette.text.primary,
+                      '&:hover': { color: accent },
                       transition: 'color 0.2s',
                     }}
                   >
@@ -189,14 +201,14 @@ export default function Navbar() {
                 onClick={logout}
                 variant="contained"
                 sx={{
-                  bgcolor: BRAND.gold,
-                  color: '#111',
+                  bgcolor: accent,
+                  color: theme.palette.secondary.contrastText,
                   borderRadius: 999,
                   fontWeight: 800,
                   px: 2.5,
                   py: 0.8,
                   fontSize: 13,
-                  '&:hover': { bgcolor: '#C6A132' },
+                  '&:hover': { bgcolor: darken(accent, 0.08) },
                   boxShadow: '0 3px 8px rgba(0,0,0,.1)',
                 }}
               >
@@ -212,6 +224,10 @@ export default function Navbar() {
 
 /* 🔹 ปุ่มลิงก์นำทางแบบ Reusable (ใช้ซ้ำได้ทุกที่) */
 function NavBtn({ to, children }) {
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
+
   return (
     <Button
       component={NavLink}
@@ -219,14 +235,14 @@ function NavBtn({ to, children }) {
       sx={{
         px: 1.5,
         fontWeight: 800,
-        color: BRAND.navy,
+        color: brand?.navy || theme.palette.text.primary,
         opacity: 0.85,
         fontSize: 14,
         textTransform: 'none',
         transition: 'color 0.25s, opacity 0.25s',
         position: 'relative',
-        '&:hover': { color: BRAND.gold, opacity: 1 },
-        '&.active': { color: BRAND.gold, opacity: 1 },
+        '&:hover': { color: accent, opacity: 1 },
+        '&.active': { color: accent, opacity: 1 },
         '&.active::after': {
           content: '""',
           position: 'absolute',
@@ -235,7 +251,7 @@ function NavBtn({ to, children }) {
           right: '18%',
           height: 2,
           borderRadius: 1,
-          backgroundColor: BRAND.gold,
+          backgroundColor: accent,
         },
       }}
     >

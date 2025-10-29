@@ -1,18 +1,25 @@
 // src/pages/Dashboard.jsx
 import { Typography, Paper, Box, Stack, Divider } from '@mui/material'
+import { useTheme, alpha } from '@mui/material/styles'
 import { useAuth } from '../store/authStore'
 
-const BRAND = { navy: '#1C2738', gold: '#D4AF37' }
-
 export default function Dashboard() {
+  const theme = useTheme()
+  const brand = theme.palette.brand
+  const accent = theme.palette.secondary.main
   const { user } = useAuth()
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        background:
-          'radial-gradient(800px 400px at 10% 10%, rgba(212,175,55,.08), transparent 70%), radial-gradient(800px 400px at 90% 90%, rgba(28,39,56,.06), transparent 70%)',
+        background: `radial-gradient(800px 400px at 10% 10%, ${alpha(
+          accent,
+          0.18
+        )}, transparent 70%), radial-gradient(800px 400px at 90% 90%, ${alpha(
+          brand?.navy || theme.palette.primary.main,
+          0.12
+        )}, transparent 70%)`,
         py: { xs: 6, md: 10 },
         px: 2,
       }}
@@ -33,7 +40,7 @@ export default function Dashboard() {
           variant="h4"
           fontWeight={900}
           sx={{
-            color: BRAND.navy,
+            color: brand?.navy || theme.palette.text.primary,
             mb: 2,
             fontFamily: '"Playfair Display", serif',
           }}
@@ -45,7 +52,7 @@ export default function Dashboard() {
           sx={{
             width: 60,
             height: 4,
-            bgcolor: BRAND.gold,
+            bgcolor: accent,
             mx: 'auto',
             mb: 3,
             borderRadius: 2,

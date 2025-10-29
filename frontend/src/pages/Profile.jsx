@@ -3,19 +3,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import {
   Paper, Typography, Stack, Chip, Divider, Button,
-  Box, Avatar, Skeleton, IconButton, Tooltip, Link as MuiLink
+  Box, Avatar, Skeleton, IconButton, Tooltip, Link as MuiLink, useTheme
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { getUserById } from '../lib/user';
 import { useAuth } from '../store/authStore';
-
-const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
 const uploadBase = import.meta.env.VITE_UPLOAD_BASE;
 
 export default function Profile() {
   const { id } = useParams();
   const { user, loading: authLoading } = useAuth();
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const headerGradient = `linear-gradient(135deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`;
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading]   = useState(true);
@@ -89,7 +90,7 @@ export default function Profile() {
           position: 'relative',
           px: { xs: 2, md: 3 },
           py: { xs: 3, md: 4 },
-          bgcolor: 'linear-gradient(135deg, #f6f7f9, #ffffff)',
+          background: headerGradient,
           borderRadius: 2,
           mb: 3,
         }}
@@ -105,7 +106,7 @@ export default function Profile() {
             </>
           ) : (
             <>
-              <Avatar sx={{ width: 56, height: 56, bgcolor: BRAND.navy }}>
+              <Avatar sx={{ width: 56, height: 56, bgcolor: brand?.navy || theme.palette.primary.main }}>
                 {(p?.name || profile?.email || '?')?.[0]?.toUpperCase() || '?'}
               </Avatar>
               <Box sx={{ flexGrow: 1, minWidth: 0 }}>

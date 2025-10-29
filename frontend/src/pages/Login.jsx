@@ -2,8 +2,9 @@
 import { useState, useRef } from 'react';
 import {
   Box, Container, Paper, Stack, TextField, Button, Typography,
-  Alert, IconButton, InputAdornment, Link as MuiLink, Divider
+  Alert, IconButton, InputAdornment, Link as MuiLink, Divider, useTheme
 } from '@mui/material';
+import { alpha, darken } from '@mui/material/styles';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import Visibility from '@mui/icons-material/Visibility';
@@ -13,8 +14,6 @@ import { login } from '../lib/auth';
 import { useAuth } from '../store/authStore';
 import logo from '../assets/nabi_logo_no_bg.png';
 
-const BRAND = { gold: '#D4AF37', blue1: '#5DB3FF', blue2: '#257CFF' };
-
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,6 +21,14 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const alertRef = useRef(null);
+
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
+  const primaryMain = theme.palette.primary.main;
+  const primaryLight = brand?.blue1 || theme.palette.primary.light;
+  const primaryGradient = brand?.blue2 || primaryMain;
+  const fieldBg = alpha(primaryLight, 0.18);
 
   const { setToken, setUser, fetchMe } = useAuth();
   const navigate = useNavigate();
@@ -66,13 +73,12 @@ export default function Login() {
   return (
     <Box
       sx={{
-        minHeight: 'calc(100vh - 64px)',
+        minHeight: 'calc(70vh - 64px)',
         display: 'grid',
         placeItems: 'center',
-        py: { xs: 4, md: 6 },
+        py: { xs: 1, md: 0 },
         px: 2,
-        background:
-          'radial-gradient(1200px 600px at 20% -10%, rgba(36,56,79,.06), transparent 40%), radial-gradient(1000px 500px at 120% 110%, rgba(212,175,55,.08), transparent 45%)',
+
       }}
     >
       <Container maxWidth="md" disableGutters>
@@ -94,8 +100,7 @@ export default function Login() {
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
-              p: 5,
-              background: `linear-gradient(180deg, ${BRAND.blue1} 0%, ${BRAND.blue2} 100%)`,
+              background: `linear-gradient(180deg, ${primaryLight} 0%, ${primaryGradient} 100%)`,
               color: '#fff',
             }}
           >
@@ -145,7 +150,11 @@ export default function Login() {
           <Box component="form" onSubmit={onSubmit} sx={{ p: { xs: 3, md: 5 }, bgcolor: '#fff' }}>
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h4" fontWeight={900} color="#2B4A73">
+                <Typography
+                  variant="h4"
+                  fontWeight={900}
+                  color={brand?.navy || theme.palette.text.primary}
+                >
                   Welcome
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -163,6 +172,7 @@ export default function Login() {
               <TextField
                 label="อีเมล"
                 type="email"
+                placeholder='อีเมลของคุณ'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -174,10 +184,10 @@ export default function Login() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
-                    bgcolor: '#EAF3FF',
+                    bgcolor: fieldBg,
                     '& fieldset': { borderColor: 'transparent' },
                     '&:hover fieldset': { borderColor: 'transparent' },
-                    '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
+                    '&.Mui-focused fieldset': { borderColor: primaryMain },
                     px: 1,
                   },
                 }}
@@ -193,6 +203,7 @@ export default function Login() {
               {/* Password */}
               <TextField
                 label="รหัสผ่าน"
+                placeholder='รหัสผ่านของคุณ'
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -205,10 +216,10 @@ export default function Login() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1,
-                    bgcolor: '#EAF3FF',
+                    bgcolor: fieldBg,
                     '& fieldset': { borderColor: 'transparent' },
                     '&:hover fieldset': { borderColor: 'transparent' },
-                    '&.Mui-focused fieldset': { borderColor: BRAND.blue2 },
+                    '&.Mui-focused fieldset': { borderColor: primaryMain },
                     px: 1,
                   },
                 }}
@@ -219,7 +230,7 @@ export default function Login() {
                     </InputAdornment>
                   ),
                   endAdornment: (
-                    <InputAdornment position="end">
+                    <InputAdornment position="end" style={{paddingRight:10}}>
                       <IconButton onClick={() => setShowPw((s) => !s)} edge="end">
                         {showPw ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -247,9 +258,9 @@ export default function Login() {
                   textTransform: 'none',
                   width: 200,
                   alignSelf: 'center',
-                  bgcolor: '#2F7BFF',
-                  boxShadow: '0 8px 16px rgba(47,123,255,.25)',
-                  '&:hover': { bgcolor: '#1F6BEE' },
+                  bgcolor: primaryMain,
+                  boxShadow: `0 8px 16px ${alpha(primaryMain, 0.25)}`,
+                  '&:hover': { bgcolor: darken(primaryMain, 0.08) },
                 }}
               >
                 {loading ? 'Logging in…' : 'LOG IN'}
@@ -258,9 +269,14 @@ export default function Login() {
               <Divider flexItem sx={{ my: 1 }} />
 
               <Typography variant="body2" color="text.secondary" textAlign="center">
-                Don’t have an account?{' '}
-                <MuiLink component={Link} to="/register" underline="hover" sx={{ fontWeight: 800 }}>
-                  Sign Up
+                ไม่มีบัญชี?{' '}
+                <MuiLink
+                  component={Link}
+                  to="/register"
+                  underline="hover"
+                  sx={{ fontWeight: 800, color: accent }}
+                >
+                  สมัครสมาชิก
                 </MuiLink>
               </Typography>
             </Stack>

@@ -15,7 +15,9 @@ import {
   Stack,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
+import { darken } from '@mui/material/styles';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
@@ -34,6 +36,10 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const theme = useTheme();
+  const accent = theme.palette.secondary.main;
+  const accentHover = darken(accent, 0.12);
+  const contrast = theme.palette.secondary.contrastText;
 
   const addItem = useCart((state) => state.addItem);
   const cartLoading = useCart((state) => state.loading);
@@ -280,7 +286,9 @@ export default function ProductDetail() {
                             height: '100%',
                             objectFit: 'cover',
                             cursor: 'pointer',
-                            border: active ? '2px solid #D4AF37' : '1px solid rgba(0,0,0,.08)',
+                            border: active
+                              ? `2px solid ${accent}`
+                              : '1px solid rgba(0,0,0,.08)',
                             opacity: active ? 1 : 0.85,
                             transition: 'transform .2s, opacity .2s',
                             '&:hover': { transform: 'scale(1.02)', opacity: 1 },
@@ -377,11 +385,11 @@ export default function ProductDetail() {
                     sx={{
                       flexGrow: 1,
                       fontWeight: 800,
-                      bgcolor: '#D4AF37',
-                      color: '#111',
+                      bgcolor: accent,
+                      color: contrast,
                       borderRadius: 2,
                       textTransform: 'none',
-                      '&:hover': { bgcolor: '#C6A132' },
+                      '&:hover': { bgcolor: accentHover },
                     }}
                   >
                     {outOfStock ? 'สินค้าหมด' : adding || cartLoading ? 'กำลังเพิ่ม…' : 'เพิ่มลงตะกร้า'}

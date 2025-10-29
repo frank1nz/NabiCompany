@@ -22,7 +22,9 @@ import {
   TableCell,
   TableBody,
   Tooltip,
+  useTheme,
 } from '@mui/material';
+import { alpha, darken } from '@mui/material/styles';
 
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
@@ -30,17 +32,6 @@ import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import ArrowDropDownRoundedIcon from '@mui/icons-material/ArrowDropDownRounded';
 
 import { adminListOrders, adminUpdateOrderStatus } from '../../lib/orders';
-
-// ========== Theme-ish palette for this page ==========
-const BRAND = {
-  gold: '#D4AF37',
-  goldDark: '#C6A132',
-  navy: '#2B4A73',
-  creamBg: '#F5F7FB',
-  grayStroke: 'rgba(0,0,0,.08)',
-  textSoft: 'rgba(0,0,0,.60)',
-  chipBg: 'rgba(0,0,0,.05)',
-};
 
 // ========== masters ==========
 const STATUS = ['pending', 'confirmed', 'rejected', 'fulfilled', 'cancelled'];
@@ -68,23 +59,6 @@ const Badge = ({ label, color, bg }) => (
   />
 );
 
-const statusChip = (s) => {
-  if (s === 'pending') return <Badge label="pending" color="#8a6d3b" bg="rgba(212,175,55,.12)" />;
-  if (s === 'confirmed') return <Badge label="confirmed" color="#0b3d0b" bg="rgba(76,175,80,.18)" />;
-  if (s === 'rejected') return <Badge label="rejected" color="#b71c1c" bg="rgba(244,67,54,.15)" />;
-  if (s === 'fulfilled') return <Badge label="fulfilled" color="#0d47a1" bg="rgba(33,150,243,.15)" />;
-  if (s === 'cancelled') return <Badge label="cancelled" color="#424242" bg="rgba(0,0,0,.08)" />;
-  return <Badge label={s || '-'} color="inherit" bg="rgba(0,0,0,.06)" />;
-};
-
-const payChip = (s) => {
-  if (s === 'pending') return <Badge label="pending" color="#8a6d3b" bg="rgba(212,175,55,.12)" />;
-  if (s === 'paid') return <Badge label="paid" color="#0b3d0b" bg="rgba(76,175,80,.18)" />;
-  if (s === 'failed') return <Badge label="failed" color="#b71c1c" bg="rgba(244,67,54,.15)" />;
-  if (s === 'expired') return <Badge label="expired" color="#424242" bg="rgba(0,0,0,.08)" />;
-  return <Badge label={s || '-'} color="inherit" bg="rgba(0,0,0,.06)" />;
-};
-
 // รองรับ API หลายเวอร์ชัน — ดึง note จากหลาย ๆ key
 const getNote = (o) => {
   const cands = [o?.note, o?.customerNote, o?.userNote, o?.meta?.customerNote, o?.payment?.note];
@@ -94,6 +68,9 @@ const getId = (o) => o?.id || o?._id;
 
 // พรีวิวรายการสินค้า: โชว์ 2 รายการแรกเป็นชิป, ที่เหลือรวมเป็น +N พร้อม tooltip
 function ProductPreview({ order }) {
+  const theme = useTheme();
+  const chipBg = alpha(theme.palette.text.primary, 0.08);
+  const chipColor = theme.palette.text.primary;
   const items = Array.isArray(order?.items) ? order.items : [];
   if (!items.length) {
     return <Typography variant="body2" color="text.secondary">—</Typography>;
@@ -109,8 +86,8 @@ function ProductPreview({ order }) {
         label={`${name} × ${qty}`}
         sx={{
           height: 22,
-          bgcolor: BRAND.chipBg,
-          color: 'rgba(0,0,0,.85)',
+          bgcolor: chipBg,
+          color: chipColor,
           borderRadius: 999,
           '& .MuiChip-label': { px: 1, pt: '1px' },
         }}
@@ -143,8 +120,8 @@ function ProductPreview({ order }) {
           label={`+${hidden.length}`}
           sx={{
             height: 22,
-            bgcolor: BRAND.chipBg,
-            color: 'rgba(0,0,0,.85)',
+            bgcolor: chipBg,
+            color: chipColor,
             borderRadius: 999,
             '& .MuiChip-label': { px: 1, pt: '1px' },
           }}
@@ -160,6 +137,64 @@ export default function AdminOrders() {
   const [saving, setSaving] = useState('');
   const [ok, setOk] = useState('');
   const [err, setErr] = useState('');
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
+  const accentHover = darken(accent, 0.12);
+  const backgroundSoft = theme.palette.background.default;
+  const paperBg = theme.palette.background.paper;
+  const stroke = alpha(theme.palette.common.black, 0.08);
+  const textSoft = alpha(theme.palette.text.primary, 0.6);
+  const headerColor = brand?.navy || theme.palette.text.primary;
+  const successMain = theme.palette.success.main;
+  const errorMain = theme.palette.error.main;
+  const primaryMain = theme.palette.primary.main;
+  const neutralColor = alpha(theme.palette.text.primary, 0.75);
+  const neutralBg = alpha(theme.palette.text.secondary, 0.12);
+
+  const renderStatusChip = (s) => {
+    switch (s) {
+      case 'pending':
+        return <Badge label="pending" color={accent} bg={alpha(accent, 0.18)} />;
+      case 'confirmed':
+        return (
+          <Badge
+            label="confirmed"
+            color={successMain}
+            bg={alpha(successMain, 0.18)}
+          />
+        );
+      case 'rejected':
+        return <Badge label="rejected" color={errorMain} bg={alpha(errorMain, 0.18)} />;
+      case 'fulfilled':
+        return (
+          <Badge
+            label="fulfilled"
+            color={primaryMain}
+            bg={alpha(primaryMain, 0.18)}
+          />
+        );
+      case 'cancelled':
+        return <Badge label="cancelled" color={neutralColor} bg={neutralBg} />;
+      default:
+        return <Badge label={s || '-'} color={neutralColor} bg={neutralBg} />;
+    }
+  };
+
+  const renderPayChip = (s) => {
+    switch (s) {
+      case 'pending':
+        return <Badge label="pending" color={accent} bg={alpha(accent, 0.18)} />;
+      case 'paid':
+        return <Badge label="paid" color={successMain} bg={alpha(successMain, 0.18)} />;
+      case 'failed':
+        return <Badge label="failed" color={errorMain} bg={alpha(errorMain, 0.18)} />;
+      case 'expired':
+        return <Badge label="expired" color={neutralColor} bg={neutralBg} />;
+      default:
+        return <Badge label={s || '-'} color={neutralColor} bg={neutralBg} />;
+    }
+  };
 
   // filters
   const [q, setQ] = useState('');
@@ -250,7 +285,7 @@ export default function AdminOrders() {
           borderRadius: 3,
           overflow: 'visible', // สำคัญมาก: ไม่ตัด dropdown
           bgcolor: '#fff',
-          border: `1px solid ${BRAND.grayStroke}`,
+          border: `1px solid ${stroke}`,
           boxShadow: '0 6px 18px rgba(0,0,0,.04)',
         }}
       >
@@ -263,15 +298,15 @@ export default function AdminOrders() {
             px: 2,
             py: 1.1,
             gap: 1,
-            borderBottom: `1px solid ${BRAND.grayStroke}`,
-            bgcolor: BRAND.creamBg,
+            borderBottom: `1px solid ${stroke}`,
+            bgcolor: backgroundSoft,
           }}
         >
-          <Typography variant="h6" fontWeight={900} sx={{ color: BRAND.navy, mr: 1 }}>
+          <Typography variant="h6" fontWeight={900} sx={{ color: headerColor, mr: 1 }}>
             รายการคำสั่งซื้อ
           </Typography>
 
-          <TextField
+          {/* <TextField
             size="small"
             placeholder="ค้นหา: ชื่อ / อีเมล / ออเดอร์ "
             value={q}
@@ -284,9 +319,9 @@ export default function AdminOrders() {
               ),
             }}
             sx={{ minWidth: 420, bgcolor: '#fff', borderRadius: 2 }}
-          />
+          /> */}
 
-          <Select
+          {/* <Select
             size="small"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -300,9 +335,9 @@ export default function AdminOrders() {
                 {s}
               </MenuItem>
             ))}
-          </Select>
+          </Select> */}
 
-          <Select
+          {/* <Select
             size="small"
             value={pay}
             onChange={(e) => setPay(e.target.value)}
@@ -316,7 +351,7 @@ export default function AdminOrders() {
                 {s}
               </MenuItem>
             ))}
-          </Select>
+          </Select> */}
 
           <IconButton onClick={load} title="รีเฟรช" sx={{ ml: 'auto' }}>
             {loading ? <CircularProgress size={20} /> : <RefreshIcon />}
@@ -335,21 +370,21 @@ export default function AdminOrders() {
             sx={{
               tableLayout: 'auto',
               minWidth: 1040, // พอดีกับจอทั่วไป
-              '& td, & th': { borderColor: BRAND.grayStroke, py: 1.05 },
+              '& td, & th': { borderColor: stroke, py: 1.05 },
               // บีบคอลัมน์สินค้าไม่ให้ยืดเกินไป
               '& td:nth-of-type(2), & th:nth-of-type(2)': { maxWidth: 320 },
             }}
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 800, color: BRAND.navy, width: '26%' }}>รายละเอียด</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: BRAND.navy, width: '22%' }}>สินค้า</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: BRAND.navy, width: '20%' }} align="right">
+                <TableCell sx={{ fontWeight: 800, color: headerColor, width: '26%' }}>รายละเอียด</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: headerColor, width: '22%' }}>สินค้า</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: headerColor, width: '20%' }} align="right">
                   ยอดรวม
                 </TableCell>
-                <TableCell sx={{ fontWeight: 800, color: BRAND.navy, width: '16%' }}>สถานะ</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: BRAND.navy, width: '16%' }}>การชำระเงิน</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: BRAND.navy, width: '10%' }} align="right">
+                <TableCell sx={{ fontWeight: 800, color: headerColor, width: '16%' }}>สถานะ</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: headerColor, width: '16%' }}>การชำระเงิน</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: headerColor, width: '10%' }} align="right">
                   จัดการ
                 </TableCell>
               </TableRow>
@@ -391,7 +426,7 @@ export default function AdminOrders() {
                           {o.user?.email || '-'}
                         </Typography>
                         {!!note && (
-                          <Typography variant="caption" sx={{ color: BRAND.textSoft, mt: 0.25 }}>
+                          <Typography variant="caption" sx={{ color: textSoft, mt: 0.25 }}>
                             หมายเหตุ: {note}
                           </Typography>
                         )}
@@ -413,7 +448,7 @@ export default function AdminOrders() {
                     {/* สถานะ */}
                     <TableCell sx={{ verticalAlign: 'top', pr: 2 }}>
                       <Stack spacing={0.75}>
-                        {statusChip(st)}
+                        {renderStatusChip(st)}
                         <Select
                           size="small"
                           value={st}
@@ -442,7 +477,7 @@ export default function AdminOrders() {
                     {/* การชำระเงิน */}
                     <TableCell sx={{ verticalAlign: 'top', pr: 2 }}>
                       <Stack spacing={0.75}>
-                        {payChip(pst)}
+                        {renderPayChip(pst)}
                         <Select
                           size="small"
                           value={pst}
@@ -485,10 +520,10 @@ export default function AdminOrders() {
                           fontWeight: 800,
                           px: 1.4,
                           minWidth: 0,
-                          bgcolor: changed ? BRAND.gold : 'transparent',
-                          color: changed ? '#111' : 'inherit',
+                          bgcolor: changed ? accent : 'transparent',
+                          color: changed ? theme.palette.secondary.contrastText : 'inherit',
                           borderColor: 'rgba(0,0,0,.18)',
-                          '&:hover': changed ? { bgcolor: BRAND.goldDark } : {},
+                          '&:hover': changed ? { bgcolor: accentHover } : {},
                         }}
                       >
                         {saving === id ? 'บันทึก…' : 'บันทึก'}

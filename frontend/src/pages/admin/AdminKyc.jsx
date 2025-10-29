@@ -12,13 +12,13 @@ import {
   Card,
   CardContent,
   CardHeader,
+  useTheme,
 } from '@mui/material'
+import { darken } from '@mui/material/styles'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined'
 import AssignmentIndOutlinedIcon from '@mui/icons-material/AssignmentIndOutlined'
 import { fetchPendingKyc, approveKyc, rejectKyc } from '../../lib/admin'
-
-const BRAND = { gold: '#D4AF37', navy: '#1C2738' }
 const uploadBase = import.meta.env.VITE_UPLOAD_BASE
 
 export default function AdminKyc() {
@@ -26,6 +26,8 @@ export default function AdminKyc() {
   const [noteDraft, setNoteDraft] = useState({})
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const theme = useTheme()
+  const accent = theme.palette.secondary.main
 
   const loadUsers = () =>
     fetchPendingKyc()
@@ -187,15 +189,15 @@ export default function AdminKyc() {
                   />
                   <Button
                     variant="contained"
-                    color="success"
+                    color="secondary"
                     startIcon={<CheckCircleOutlineIcon />}
                     onClick={() => handleApprove(user._id)}
                     sx={{
                       fontWeight: 700,
                       px: 2.5,
-                      bgcolor: BRAND.gold,
-                      color: '#111',
-                      '&:hover': { bgcolor: '#cfa82d' },
+                      color: theme.palette.secondary.contrastText,
+                      bgcolor: accent,
+                      '&:hover': { bgcolor: darken(accent, 0.12) },
                     }}
                   >
                     อนุมัติ

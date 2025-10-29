@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
-import { Container, CircularProgress, Box } from '@mui/material';
+import { Container, CircularProgress, Box, useTheme } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import { useAuth } from '../store/authStore';
 
-const BRAND = { navy: '#1C2738', gold: '#D4AF37' };
-
 export default function Layout() {
+  const theme = useTheme();
   const { fetchMe, loading, user } = useAuth();
   const location = useLocation();
 
@@ -42,8 +41,8 @@ export default function Layout() {
       sx={{
         minHeight: '100vh',
         background: isAuthPage
-          ? 'linear-gradient(180deg, #fdfdfd, #fafafa)'
-          : 'linear-gradient(180deg, #ffffff, #f9f9f9)',
+          ? `linear-gradient(180deg, ${theme.palette.common.white}, ${theme.palette.background.default})`
+          : `linear-gradient(180deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`,
       }}
     >
       {/* 🌟 Navbar */}

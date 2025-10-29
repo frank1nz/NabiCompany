@@ -3,15 +3,14 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   Paper, Typography, Stack, Button, Avatar, Chip, Box, Divider,
   IconButton, Tooltip, Skeleton, Dialog, DialogTitle, DialogContent,
-  DialogActions, Link as MuiLink
+  DialogActions, Link as MuiLink, useTheme
 } from '@mui/material';
+import { darken } from '@mui/material/styles';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import api from '../lib/axios';
-
-const BRAND = { gold: '#D4AF37' };
 
 const statusChip = (s) => {
   switch (s) {
@@ -26,6 +25,10 @@ export default function KycReview() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [confirm, setConfirm] = useState({ open: false, id: null, action: '' });
+  const theme = useTheme();
+  const accent = theme.palette.secondary.main;
+  const accentHover = darken(accent, 0.12);
+  const contrast = theme.palette.secondary.contrastText;
 
   const base = import.meta.env.VITE_UPLOAD_BASE;
 
@@ -187,7 +190,11 @@ export default function KycReview() {
                     variant="contained"
                     startIcon={<CheckCircleOutlineIcon />}
                     onClick={() => onAsk(x._id, 'approved')}
-                    sx={{ bgcolor: BRAND.gold, color: '#111', '&:hover': { bgcolor: '#C6A132' } }}
+                    sx={{
+                      bgcolor: accent,
+                      color: contrast,
+                      '&:hover': { bgcolor: accentHover },
+                    }}
                   >
                     Approve
                   </Button>

@@ -1,17 +1,18 @@
 // src/pages/Home.jsx
-import { Typography, Box, Divider, Container, Button, Stack } from '@mui/material';
+import { Typography, Box, Divider, Container, Button, Stack, useTheme } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import Products from './Products';
 
-const BRAND = {
-  navy: '#1C2738',
-  navyEnd: '#2E415A',
-  gold: '#D4AF37',
-};
-
 export default function Home() {
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
+  const heroStart = brand?.blue2 || theme.palette.primary.main;
+  const heroEnd = brand?.navy || theme.palette.primary.dark;
+
   return (
-    <Box sx={{ bgcolor: '#fff', minHeight: '100vh' }}>
+    <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh' }}>
       {/* HERO */}
       <Box
         component="section"
@@ -20,7 +21,7 @@ export default function Home() {
           position: 'relative',
           color: '#fff',
           py: { xs: 8, md: 12 },
-          background: `linear-gradient(135deg, ${BRAND.navy}, ${BRAND.navyEnd})`,
+          background: `linear-gradient(135deg, ${heroStart}, ${heroEnd})`,
           overflow: 'hidden',
           '&::after': {
             content: '""',
@@ -83,18 +84,24 @@ export default function Home() {
                 size="large"
                 endIcon={<ArrowForwardIcon />}
                 sx={{
-                  px: 3,
-                  py: 1.2,
-                  fontWeight: 900,
-                  borderRadius: 999,
-                  color: '#111',
-                  bgcolor: BRAND.gold,
-                  boxShadow: '0 10px 22px rgba(212,175,55,.25), inset 0 1px 0 rgba(255,255,255,.28)',
-                  '&:hover': { bgcolor: '#C6A132', boxShadow: '0 10px 22px rgba(212,175,55,.35)' },
-                }}
-              >
-                Explore Products
-              </Button>
+                px: 3,
+                py: 1.2,
+                fontWeight: 900,
+                borderRadius: 999,
+                color: theme.palette.secondary.contrastText,
+                bgcolor: accent,
+                boxShadow: `0 10px 22px ${alpha(accent, 0.25)}, inset 0 1px 0 ${alpha(
+                  theme.palette.common.white,
+                  0.28
+                )}`,
+                '&:hover': {
+                  bgcolor: alpha(accent, 0.92),
+                  boxShadow: `0 10px 22px ${alpha(accent, 0.35)}`,
+                },
+              }}
+            >
+              Explore Products
+            </Button>
 
               <Button
                 href="/about"
@@ -119,10 +126,14 @@ export default function Home() {
       {/* FEATURED */}
       <Container component="section" aria-label="Featured products" sx={{ py: { xs: 6, md: 10 } }}>
         <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h5" fontWeight={900} sx={{ color: BRAND.navy, mb: 1, letterSpacing: 0.2 }}>
+          <Typography
+            variant="h5"
+            fontWeight={900}
+            sx={{ color: brand?.navy || theme.palette.text.primary, mb: 1, letterSpacing: 0.2 }}
+          >
             Featured Products
           </Typography>
-          <Divider sx={{ width: 64, height: 4, mx: 'auto', bgcolor: BRAND.gold, borderRadius: 2 }} />
+          <Divider sx={{ width: 64, height: 4, mx: 'auto', bgcolor: accent, borderRadius: 2 }} />
         </Box>
 
         <Products compact limit={6} />

@@ -6,12 +6,14 @@ import {
   DialogActions,
   Button,
   Typography,
-  Stack,
+  useTheme,
 } from '@mui/material';
-
-const BRAND = { gold: '#D4AF37', navy: '#1C2738' };
+import { darken } from '@mui/material/styles';
 
 export default function DeleteConfirmDialog({ open, product, onClose, onConfirm }) {
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
   const isRestore = Boolean(product?.deletedAt);
   const title = isRestore ? 'ยืนยันการกู้คืนสินค้า' : 'ยืนยันการลบสินค้า';
   const actionLabel = isRestore ? 'กู้คืน' : 'ลบ';
@@ -35,7 +37,7 @@ export default function DeleteConfirmDialog({ open, product, onClose, onConfirm 
       <DialogTitle
         sx={{
           fontWeight: 900,
-          color: BRAND.navy,
+          color: brand?.navy || theme.palette.text.primary,
           pb: 1,
         }}
       >
@@ -76,7 +78,7 @@ export default function DeleteConfirmDialog({ open, product, onClose, onConfirm 
           variant="outlined"
           sx={{
             borderColor: 'rgba(0,0,0,.2)',
-            color: BRAND.navy,
+            color: brand?.navy || theme.palette.text.primary,
             fontWeight: 700,
             '&:hover': { bgcolor: 'rgba(0,0,0,.04)' },
           }}
@@ -93,9 +95,9 @@ export default function DeleteConfirmDialog({ open, product, onClose, onConfirm 
             fontWeight: 900,
             borderRadius: 999,
             ...(isRestore && {
-              bgcolor: BRAND.gold,
-              color: '#111',
-              '&:hover': { bgcolor: '#C6A132' },
+              bgcolor: accent,
+              color: theme.palette.secondary.contrastText,
+              '&:hover': { bgcolor: darken(accent, 0.08) },
             }),
           }}
         >

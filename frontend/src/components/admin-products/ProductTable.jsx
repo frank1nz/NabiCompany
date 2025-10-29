@@ -1,31 +1,34 @@
 import {
   Table, TableHead, TableRow, TableCell, TableBody, Stack,
-  Chip, Button, Tooltip, Box, Typography
+  Chip, Button, Tooltip, Box, Typography, useTheme,
 } from '@mui/material';
+import { alpha, darken } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import ToggleOnIcon from '@mui/icons-material/ToggleOn';
 import ToggleOffIcon from '@mui/icons-material/ToggleOff';
 
-const BRAND = {
-  navy: '#1C2738',
-  gold: '#D4AF37',
-};
-
 export default function ProductTable({ products = [], onToggleStatus, onEdit, onAskDelete }) {
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
+  const navy = brand?.navy || theme.palette.primary.dark;
+  const successMain = theme.palette.success.main;
+  const errorMain = theme.palette.error.main;
+
   return (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
       <Table size="small" sx={{ minWidth: 940 }}>
         <TableHead sx={{ bgcolor: 'rgba(28,39,56,0.04)' }}>
           <TableRow>
-            <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ชื่อ</TableCell>
-            <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>ราคา</TableCell>
-            <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>คงเหลือ</TableCell>
-            <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>สถานะ</TableCell>
-            <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>Visibility</TableCell>
-            <TableCell sx={{ fontWeight: 700, color: BRAND.navy }}>Tags</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 700, color: BRAND.navy }}>จัดการ</TableCell>
+            <TableCell sx={{ fontWeight: 700, color: navy }}>ชื่อ</TableCell>
+            <TableCell sx={{ fontWeight: 700, color: navy }}>ราคา</TableCell>
+            <TableCell sx={{ fontWeight: 700, color: navy }}>คงเหลือ</TableCell>
+            <TableCell sx={{ fontWeight: 700, color: navy }}>สถานะ</TableCell>
+            <TableCell sx={{ fontWeight: 700, color: navy }}>Visibility</TableCell>
+            <TableCell sx={{ fontWeight: 700, color: navy }}>Tags</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: navy }}>จัดการ</TableCell>
           </TableRow>
         </TableHead>
 
@@ -56,12 +59,16 @@ export default function ProductTable({ products = [], onToggleStatus, onEdit, on
                     size="small"
                     sx={{
                       fontWeight: 700,
-                      color: outOfStock ? '#fff' : lowStock ? '#8a6d3b' : '#134e4a',
-                      bgcolor: outOfStock
-                        ? '#d32f2f'
+                      color: outOfStock
+                        ? theme.palette.common.white
                         : lowStock
-                        ? 'rgba(212,175,55,0.2)'
-                        : 'rgba(19,78,74,0.12)',
+                        ? accent
+                        : successMain,
+                      bgcolor: outOfStock
+                        ? errorMain
+                        : lowStock
+                        ? alpha(accent, 0.2)
+                        : alpha(successMain, 0.12),
                       border: '1px solid rgba(0,0,0,0.08)',
                     }}
                   />
@@ -72,8 +79,8 @@ export default function ProductTable({ products = [], onToggleStatus, onEdit, on
                     size="small"
                     sx={{
                       fontWeight: 700,
-                      color: isActive ? '#fff' : '#555',
-                      bgcolor: isActive ? BRAND.navy : 'rgba(0,0,0,0.08)',
+                      color: isActive ? theme.palette.common.white : theme.palette.text.secondary,
+                      bgcolor: isActive ? navy : 'rgba(0,0,0,0.08)',
                     }}
                   />
                 </TableCell>
@@ -85,9 +92,9 @@ export default function ProductTable({ products = [], onToggleStatus, onEdit, on
                     sx={{
                       fontWeight: 600,
                       borderColor:
-                        product.visibility === 'public' ? BRAND.gold : 'rgba(0,0,0,0.2)',
+                        product.visibility === 'public' ? accent : 'rgba(0,0,0,0.2)',
                       color:
-                        product.visibility === 'public' ? BRAND.gold : 'text.secondary',
+                        product.visibility === 'public' ? accent : 'text.secondary',
                     }}
                   />
                 </TableCell>
@@ -159,9 +166,11 @@ export default function ProductTable({ products = [], onToggleStatus, onEdit, on
                           textTransform: 'none',
                           borderRadius: 20,
                           fontWeight: 800,
-                          bgcolor: isDeleted ? '#388E3C' : '#D32F2F',
+                          bgcolor: isDeleted ? successMain : errorMain,
                           '&:hover': {
-                            bgcolor: isDeleted ? '#2E7D32' : '#C62828',
+                            bgcolor: isDeleted
+                              ? darken(successMain, 0.12)
+                              : darken(errorMain, 0.12),
                           },
                         }}
                       >

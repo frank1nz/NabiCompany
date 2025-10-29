@@ -13,7 +13,9 @@ import {
   Divider,
   Chip,
   Button,
+  useTheme,
 } from '@mui/material';
+import { alpha, darken } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import LocalFloristOutlinedIcon from '@mui/icons-material/LocalFloristOutlined';
 import OpacityOutlinedIcon from '@mui/icons-material/OpacityOutlined';
@@ -22,17 +24,22 @@ import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
-const BRAND = { navy: '#1C2738', navyEnd: '#2E415A', gold: '#D4AF37' };
-
 export default function OurStory() {
+  const theme = useTheme();
+  const brand = theme.palette.brand;
+  const accent = theme.palette.secondary.main;
+  const accentHover = darken(accent, 0.12);
+  const heroStart = brand?.blue2 || theme.palette.primary.main;
+  const heroEnd = brand?.navy || theme.palette.primary.dark;
+
   return (
-    <Box sx={{ bgcolor: '#fff' }}>
+    <Box sx={{ bgcolor: theme.palette.background.paper }}>
       {/* HERO */}
       <Box
         sx={{
           position: 'relative',
           color: '#fff',
-          background: `linear-gradient(135deg, ${BRAND.navy}, ${BRAND.navyEnd})`,
+          background: `linear-gradient(135deg, ${heroStart}, ${heroEnd})`,
           py: { xs: 8, md: 12 },
           overflow: 'hidden',
           '&::after': {
@@ -88,9 +95,18 @@ export default function OurStory() {
             <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 3, height: '100%' }}>
               <Chip
                 label="Our Mission"
-                sx={{ bgcolor: '#F4E7B1', color: '#1a1a1a', mb: 2, fontWeight: 700 }}
+                sx={{
+                  bgcolor: alpha(accent, 0.18),
+                  color: brand?.navy || theme.palette.text.primary,
+                  mb: 2,
+                  fontWeight: 700,
+                }}
               />
-              <Typography variant="h5" fontWeight={900} sx={{ color: BRAND.navy, mb: 1 }}>
+              <Typography
+                variant="h5"
+                fontWeight={900}
+                sx={{ color: brand?.navy || theme.palette.text.primary, mb: 1 }}
+              >
                 ยกระดับวัตถุดิบไทยสู่สุราพรีเมียม
               </Typography>
               <Typography color="text.secondary" sx={{ lineHeight: 1.8 }}>
@@ -146,7 +162,11 @@ export default function OurStory() {
 
         {/* VALUES */}
         <Box sx={{ mt: { xs: 6, md: 10 } }}>
-          <Typography variant="h5" fontWeight={900} sx={{ color: BRAND.navy, mb: 2 }}>
+          <Typography
+            variant="h5"
+            fontWeight={900}
+            sx={{ color: brand?.navy || theme.palette.text.primary, mb: 2 }}
+          >
             What We Value
           </Typography>
           <Grid container spacing={2.5}>
@@ -185,8 +205,8 @@ export default function OurStory() {
                 >
                   <Avatar
                     sx={{
-                      bgcolor: '#F4E7B1',
-                      color: '#1a1a1a',
+                      bgcolor: alpha(accent, 0.18),
+                      color: brand?.navy || theme.palette.text.primary,
                       mb: 1.2,
                       width: 44,
                       height: 44,
@@ -208,7 +228,11 @@ export default function OurStory() {
 
         {/* TIMELINE */}
         <Box sx={{ mt: { xs: 6, md: 10 } }}>
-          <Typography variant="h5" fontWeight={900} sx={{ color: BRAND.navy, mb: 2 }}>
+          <Typography
+            variant="h5"
+            fontWeight={900}
+            sx={{ color: brand?.navy || theme.palette.text.primary, mb: 2 }}
+          >
             Journey
           </Typography>
           <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3 }}>
@@ -223,7 +247,7 @@ export default function OurStory() {
                   <Stack spacing={0.5}>
                     <Typography
                       variant="overline"
-                      sx={{ letterSpacing: 1, color: BRAND.gold, fontWeight: 900 }}
+                      sx={{ letterSpacing: 1, color: accent, fontWeight: 900 }}
                     >
                       {t.year}
                     </Typography>
@@ -257,7 +281,11 @@ export default function OurStory() {
               </Card>
             </Grid>
             <Grid item xs={12} md={7}>
-              <Typography variant="h5" fontWeight={900} sx={{ color: BRAND.navy, mb: 1 }}>
+              <Typography
+                variant="h5"
+                fontWeight={900}
+                sx={{ color: brand?.navy || theme.palette.text.primary, mb: 1 }}
+              >
                 ทีมเล็กที่เชื่อในรายละเอียด
               </Typography>
               <Typography color="text.secondary" sx={{ lineHeight: 1.8 }}>
@@ -276,11 +304,15 @@ export default function OurStory() {
             textAlign: 'center',
             p: { xs: 3, md: 5 },
             borderRadius: 4,
-            background: 'linear-gradient(135deg, rgba(212,175,55,.12), rgba(28,39,56,.06))',
+            background: `linear-gradient(135deg, ${alpha(accent, 0.2)}, ${alpha(heroEnd, 0.12)})`,
             border: '1px solid rgba(0,0,0,.06)',
           }}
         >
-          <Typography variant="h5" fontWeight={900} sx={{ color: BRAND.navy, mb: 1 }}>
+          <Typography
+            variant="h5"
+            fontWeight={900}
+            sx={{ color: brand?.navy || theme.palette.text.primary, mb: 1 }}
+          >
             พร้อมสัมผัสเรื่องเล่าในขวดแรกของคุณหรือยัง
           </Typography>
           <Typography color="text.secondary" sx={{ mb: 2 }}>
@@ -294,12 +326,12 @@ export default function OurStory() {
               endIcon={<ArrowForwardIcon />}
               aria-label="ไปที่หน้าสินค้า"
               sx={{
-                bgcolor: BRAND.gold,
-                color: '#111',
+                bgcolor: accent,
+                color: theme.palette.secondary.contrastText,
                 fontWeight: 900,
                 borderRadius: 999,
                 px: 2.8,
-                '&:hover': { bgcolor: '#C6A132' },
+                '&:hover': { bgcolor: accentHover },
               }}
             >
               Explore Products
@@ -309,7 +341,7 @@ export default function OurStory() {
               to="/our-story"
               variant="text"
               aria-label="ไปที่หน้า Our Story"
-              sx={{ fontWeight: 800, color: BRAND.navy }}
+              sx={{ fontWeight: 800, color: brand?.navy || theme.palette.text.primary }}
             >
               Learn More
             </Button>
