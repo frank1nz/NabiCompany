@@ -20,6 +20,7 @@ import Profile from './pages/Profile'
 import AdminKyc from './pages/admin/AdminKyc'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminProducts from './pages/admin/AdminProduct'
+import AdminNews from './pages/admin/AdminNews'
 
 export const router = createBrowserRouter([
   {
@@ -90,6 +91,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth roles={['admin']}>
             <AdminProducts />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/news',
+        element: (
+          <RequireAuth roles={['admin']}>
+            <AdminNews />
           </RequireAuth>
         ),
       },

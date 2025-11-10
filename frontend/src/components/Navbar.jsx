@@ -179,13 +179,8 @@ export default function Navbar() {
                   >
                     Orders
                   </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/admin/products"
-                    onClick={handleClose}
-                  >
-                    Products
-                  </MenuItem>
+                  <MenuItem component={Link} to="/admin/products" onClick={handleClose}>Products</MenuItem>
+                  <MenuItem component={Link} to="/admin/news" onClick={handleClose}>News</MenuItem>
                 </Menu>
               </>
             )}

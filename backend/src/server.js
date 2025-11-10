@@ -8,6 +8,8 @@ import leadRoutes from "./routes/lead.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import productAdminRoutes from "./routes/product.admin.routes.js";
+import newsAdminRoutes from "./routes/news.admin.routes.js";
+import newsRoutes from "./routes/news.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import orderRoutes from "./routes/order.routes.js";
@@ -27,6 +29,8 @@ app.use("/api/leads", leadRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);          
 app.use("/api/admin/products", productAdminRoutes);
+app.use("/api/admin/news", newsAdminRoutes);
+app.use("/api/news", newsRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
 

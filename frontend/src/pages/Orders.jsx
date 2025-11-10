@@ -566,11 +566,11 @@ export default function Orders() {
                   <TableCell align="right">
                     <Stack direction="row" justifyContent="flex-end" spacing={1}>
                       <Button size="small" variant="outlined" onClick={() => setPaymentOrder(order)}>ดูรายละเอียด</Button>
-                      {canPay && (
+                      {/* {canPay && (
                         <Button size="small" variant="contained" onClick={() => setPaymentOrder(order)} sx={{ fontWeight: 700 }}>
                           ชำระเงิน
                         </Button>
-                      )}
+                      )} */}
                     </Stack>
                   </TableCell>
                 </TableRow>

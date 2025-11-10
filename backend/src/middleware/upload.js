@@ -33,3 +33,17 @@ export const uploadKyc = multer({
   { name: "idCardImage", maxCount: 1 },
   { name: "selfieWithId", maxCount: 1 }
 ]);
+
+// Single image upload for dashboard announcements
+export const uploadDashboardImage = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: (Number(process.env.MAX_UPLOAD_MB) || 8) * 1024 * 1024 }
+}).single("image");
+
+// Single image upload for news
+export const uploadNewsImage = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: (Number(process.env.MAX_UPLOAD_MB) || 8) * 1024 * 1024 }
+}).single("image");
