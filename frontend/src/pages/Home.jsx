@@ -1,6 +1,6 @@
 // src/pages/Home.jsx
-import { Typography, Box, Divider, Container, Button, Stack, useTheme, IconButton, Paper, Chip } from '@mui/material';
-import { alpha, darken } from '@mui/material/styles';
+import { Typography, Box, Divider, Container, Button, Stack, useTheme, IconButton, Chip } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
@@ -49,7 +49,7 @@ export default function Home() {
   };
 
   return (
-    <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh' }}>
+    <Box sx={{  minHeight: '100vh' }}>
       {/* HERO */}
       <Box
         component="section"
@@ -74,11 +74,12 @@ export default function Home() {
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
           <Box
             sx={{
-              maxWidth: 980,              // ✅ คุมความกว้างเนื้อหา
-              mx: 'auto',
+              maxWidth: "auto",              // ✅ คุมความกว้างเนื้อหา
+              maxHeight: 480,             // ✅ จำกัดความสูงไม่ให้สูงเกิน
               textAlign: 'center',
               px: { xs: 1.5, md: 0 },
             }}
+
           >
             <Typography
               variant="h2"
@@ -160,20 +161,18 @@ export default function Home() {
         </Container>
       </Box>
 
-      {/* LATEST NEWS — redesigned carousel */}
+      {/* LATEST NEWS — full-bleed style (no frame) */}
       {!!news.length && (
         <Container component="section" aria-label="Latest news" sx={{ pt: { xs: 4, md: 6 } }}>
-          <Paper
+          <Box
             onMouseEnter={() => setPause(true)}
             onMouseLeave={() => setPause(false)}
-            elevation={0}
             sx={{
               position: 'relative',
               borderRadius: 3,
               overflow: 'hidden',
               height: { xs: 240, sm: 300, md: 420 },
-              border: '1px solid rgba(0,0,0,0.06)',
-              boxShadow: '0 12px 36px rgba(0,0,0,.06)'
+              // no border, no shadow — clean, edge-to-edge inside container
             }}
           >
             {/* slide image */}
@@ -191,35 +190,8 @@ export default function Home() {
               <Box sx={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${alpha('#000', .55)} 0%, ${alpha('#000', .15)} 45%, transparent 70%)` }} />
             </Box>
 
-            {/* slide content */}
-            <Box sx={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ px: { xs: 2, md: 4 }, maxWidth: { md: '60%' } }}>
-                <Chip label="NEWS" size="small" sx={{ bgcolor: alpha('#fff', .15), color: '#fff', fontWeight: 800, mb: 1 }} />
-                <Typography
-                  variant="h4"
-                  fontWeight={900}
-                  sx={{ color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,.35)', lineHeight: 1.1, mb: 1 }}
-                >
-                  {news[idx]?.title}
-                </Typography>
-                {news[idx]?.description && (
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: alpha('#fff', .9),
-                      maxWidth: 760,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    {news[idx].description}
-                  </Typography>
-                )}
-              </Box>
-
-              {/* arrows */}
+            {/* slide controls (arrows) */}
+            <Box sx={{ position: 'relative', zIndex: 1, height: '100%' }}>
               {news.length > 1 && (
                 <>
                   <IconButton onClick={() => go(false)} sx={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', bgcolor: alpha('#fff', .85), '&:hover': { bgcolor: '#fff' } }}>
@@ -230,10 +202,35 @@ export default function Home() {
                   </IconButton>
                 </>
               )}
+            </Box>
 
-              {/* dots/steps */}
+            {/* caption overlay inside image at bottom */}
+            <Box
+              sx={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 2,
+                px: { xs: 2, md: 4 },
+                py: { xs: 1.5, md: 2 },
+                color: '#fff',
+                background: `linear-gradient(180deg, ${alpha('#000', 0)} 0%, ${alpha('#000', .55)} 30%, ${alpha('#000', .65)} 100%)`,
+              }}
+            >
+              <Chip label="NEWS" size="small" sx={{ bgcolor: alpha('#fff', .2), color: '#fff', fontWeight: 800, mr: 1, mb: 0.5 }} />
+              <Typography variant="h6" fontWeight={900} sx={{ lineHeight: 1.2, mb: 0.25 }}>
+                {news[idx]?.title}
+              </Typography>
+              {news[idx]?.description && (
+                <Typography variant="body2" sx={{ color: alpha('#fff', .9), display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {news[idx].description}
+                </Typography>
+              )}
+
+              {/* dots inside overlay */}
               {news.length > 1 && (
-                <Stack direction="row" spacing={1} sx={{ position: 'absolute', bottom: 12, left: 0, right: 0, justifyContent: 'center' }}>
+                <Stack direction="row" spacing={1} sx={{ justifyContent: 'center', mt: 1 }}>
                   {news.map((_, i) => (
                     <Box
                       key={i}
@@ -243,15 +240,15 @@ export default function Home() {
                         height: 4,
                         borderRadius: 2,
                         cursor: 'pointer',
-                        bgcolor: i === idx ? accent : alpha('#fff', .45),
-                        boxShadow: i === idx ? `0 0 0 1px ${alpha(darken(accent, .2), .4)}` : 'none'
+                        bgcolor: i === idx ? '#fff' : alpha('#fff', .45),
                       }}
                     />
                   ))}
                 </Stack>
               )}
             </Box>
-          </Paper>
+          </Box>
+
 
           {/* thumbnails */}
           {news.length > 1 && (
@@ -267,7 +264,7 @@ export default function Home() {
                     borderRadius: 1.5,
                     overflow: 'hidden',
                     cursor: 'pointer',
-                    border: i === idx ? `2px solid ${accent}` : '1px solid rgba(0,0,0,.12)',
+                    border: 'none',
                     flex: '0 0 auto',
                   }}
                   title={n.title}
@@ -280,6 +277,9 @@ export default function Home() {
                     />
                   ) : (
                     <Box sx={{ width: '100%', height: '100%', bgcolor: alpha(theme.palette.text.primary, .06) }} />
+                  )}
+                  {i === idx && (
+                    <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, bgcolor: accent }} />
                   )}
                 </Box>
               ))}
