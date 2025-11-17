@@ -9,6 +9,6 @@ export async function connectDB(uri) {
 
   // ให้ Mongoose เปรียบเทียบ index ใน DB กับที่กำหนดใน schema แล้วซิงค์ให้ตรงกัน
   // (จะลบดัชนีที่ schema ไม่มี และสร้างดัชนีที่ขาด)
-  await Product.syncIndexes();
-  console.log("Product indexes synced");
+  // await Product.syncIndexes();
+  // console.log("Product indexes synced");
 }
