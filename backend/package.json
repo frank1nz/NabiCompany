@@ -11,8 +11,8 @@
     "test:watch": "vitest"
   },
   "engines": {
-    "node": "20.x"
-  },
+  "node": "18.x"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
