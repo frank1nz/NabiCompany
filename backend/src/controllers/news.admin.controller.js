@@ -1,4 +1,17 @@
+import path from "path";
 import News from "../models/News.js";
+
+// ทำ path สำหรับเก็บใน Mongo ให้เป็นรูปแบบเว็บ เช่น "uploads/filename.jpg"
+const UPLOAD_DIR_WEB = (process.env.UPLOAD_DIR || "uploads")
+  .replace(/\\/g, "/")
+  .replace(/^\.?\/*/, "") || "uploads";
+
+function fileToImagePath(file) {
+  if (!file) return "";
+  const filename = file.filename || path.basename(file.path || "");
+  if (!filename) return "";
+  return `${UPLOAD_DIR_WEB}/${filename}`.replace(/\\/g, "/");
+}
 
 export async function adminListNews(req, res) {
   const { q, includeDeleted } = req.query || {};
@@ -26,7 +39,9 @@ export async function adminListNews(req, res) {
 
 export async function adminCreateNews(req, res) {
   const body = req.body || {};
-  const image = req.file?.path || (req.files?.image?.[0]?.path) || "";
+  const imageFile = req.file || (req.files?.image?.[0]);
+  const image = fileToImagePath(imageFile);
+
   const doc = await News.create({
     title: String(body.title || "").trim(),
     description: String(body.description || ""),
@@ -54,7 +69,10 @@ export async function adminUpdateNews(req, res) {
   if (typeof body.priority !== "undefined" && isFinite(Number(body.priority))) update.priority = Number(body.priority);
   if (typeof body.startsAt !== "undefined") update.startsAt = body.startsAt ? new Date(body.startsAt) : null;
   if (typeof body.endsAt !== "undefined") update.endsAt = body.endsAt ? new Date(body.endsAt) : null;
-  if (req.file?.path || req.files?.image?.[0]?.path) update.image = req.file?.path || req.files?.image?.[0]?.path;
+
+  const imageFile = req.file || (req.files?.image?.[0]);
+  if (imageFile) update.image = fileToImagePath(imageFile);
+
   update.updatedBy = req.user?.id || undefined;
 
   if (!Object.keys(update).length) return res.status(400).json({ message: "ไม่มีข้อมูลสำหรับอัปเดต" });
@@ -84,4 +102,3 @@ export async function adminHardDeleteNews(req, res) {
   if (!deleted) return res.status(404).json({ message: "ไม่พบข่าว" });
   res.status(204).end();
 }
-

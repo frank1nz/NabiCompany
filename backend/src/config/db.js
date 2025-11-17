@@ -1,6 +1,5 @@
 // config/db.js
 import mongoose from "mongoose";
-import Product from "../models/Product.js";
 
 export async function connectDB(uri) {
   mongoose.set("strictQuery", true);

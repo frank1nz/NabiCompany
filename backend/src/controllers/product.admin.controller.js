@@ -1,7 +1,13 @@
+import path from "path";
 import Product from "../models/Product.js";
 
 const ALLOWED_STATUS = ["active", "inactive"];
 const ALLOWED_VISIBILITY = ["public", "hidden"];
+
+// ใช้ชื่อโฟลเดอร์ upload จาก env แต่บังคับให้เป็น path แบบเว็บ (ไม่ขึ้นต้นด้วย / และใช้ / เสมอ)
+const UPLOAD_DIR_WEB = (process.env.UPLOAD_DIR || "uploads")
+  .replace(/\\/g, "/")
+  .replace(/^\.?\/*/, "") || "uploads";
 
 function firstValue(value) {
   if (Array.isArray(value)) return value[0];
@@ -31,6 +37,13 @@ function normalizeTags(body = {}) {
     .filter((tag) => tag.length > 0);
 }
 
+function fileToImagePath(file) {
+  if (!file) return null;
+  const filename = file.filename || path.basename(file.path || "");
+  if (!filename) return null;
+  return `${UPLOAD_DIR_WEB}/${filename}`.replace(/\\/g, "/");
+}
+
 export async function adminListProducts(req, res) {
   const { q, tag, status, visibility, includeDeleted } = req.query;
   const filter = {};
@@ -58,7 +71,9 @@ export async function adminCreateProduct(req, res) {
   const rawVisibility = firstValue(req.body?.visibility);
   const visibility = ALLOWED_VISIBILITY.includes(rawVisibility) ? rawVisibility : "public";
   const tags = normalizeTags(req.body);
-  const images = (req.files?.images || []).map((f) => f.path);
+  const images = (req.files?.images || [])
+    .map(fileToImagePath)
+    .filter((p) => typeof p === "string" && p.length > 0);
 
   const doc = await Product.create({
     name,
@@ -120,8 +135,13 @@ export async function adminUpdateProduct(req, res) {
   const updateDoc = { ...update };
 
   if (req.files?.images?.length) {
-    const newImages = req.files.images.map((f) => f.path);
-    updateDoc.$push = { images: { $each: newImages } };
+    const newImages = req.files.images
+      .map(fileToImagePath)
+      .filter((p) => typeof p === "string" && p.length > 0);
+
+    if (newImages.length) {
+      updateDoc.$push = { images: { $each: newImages } };
+    }
   }
 
   if (!Object.keys(updateDoc).length) {
@@ -135,7 +155,9 @@ export async function adminUpdateProduct(req, res) {
 
 export async function adminReplaceImages(req, res) {
   const { id } = req.params;
-  const images = (req.files?.images || []).map((f) => f.path);
+  const images = (req.files?.images || [])
+    .map(fileToImagePath)
+    .filter((p) => typeof p === "string" && p.length > 0);
   const updated = await Product.findByIdAndUpdate(id, { images }, { new: true });
   if (!updated) return res.status(404).json({ message: "ไม่พบสินค้า" });
   res.json(updated);

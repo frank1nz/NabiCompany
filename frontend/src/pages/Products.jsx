@@ -10,7 +10,13 @@ import { useCart } from '../store/cartStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const uploadBase = import.meta.env.VITE_UPLOAD_BASE;
-const imgSrc = (path) => (path?.startsWith?.('http') ? path : `${uploadBase}/${path}`);
+const imgSrc = (path) => {
+  if (!path) return '';
+  if (typeof path === 'string' && path.startsWith('http')) return path;
+  const base = (uploadBase || window.location.origin).replace(/\/$/, '');
+  const cleaned = String(path).replace(/\\/g, '/').replace(/^\/+/, '');
+  return `${base}/${cleaned}`;
+};
 
 export default function Products({
   compact = false,
