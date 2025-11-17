@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";     
 import { connectDB } from "./config/db.js";
 
 import authRoutes from "./routes/auth.routes.js";
@@ -35,7 +36,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
 
 // Serve static files for uploads (so images can be accessed via URL)
-app.use("/uploads", express.static(process.env.UPLOAD_DIR || "uploads"));
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || "uploads";
+const UPLOAD_PATH = path.join(process.cwd(), UPLOAD_DIR);
+
+app.use("/uploads", express.static(UPLOAD_PATH));
 
 connectDB(process.env.MONGO_URI).then(() => {
   app.listen(process.env.PORT || 5000, () =>

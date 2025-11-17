@@ -3,16 +3,21 @@ import path from "path";
 import fs from "fs";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "uploads";
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const UPLOAD_PATH = path.join(process.cwd(), UPLOAD_DIR); 
+
+if (!fs.existsSync(UPLOAD_PATH)) {
+  fs.mkdirSync(UPLOAD_PATH, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+  destination: (_req, _file, cb) => cb(null, UPLOAD_PATH),
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const basename = path.basename(file.originalname, ext).replace(/\s+/g, "_");
     cb(null, `${Date.now()}_${basename}${ext}`);
   }
 });
+
 
 const fileFilter = (_req, file, cb) => {
   const allowed = (process.env.ALLOWED_IMAGE_MIME || "image/jpeg,image/png,image/webp").split(",");
