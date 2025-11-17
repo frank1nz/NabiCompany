@@ -14,14 +14,12 @@ import {
 
 const r = Router();
 
-// admin-only & read-only
 r.get("/stats/users", verifyJWT, requireRole("admin"), userStats);
 r.get("/users", verifyJWT, requireRole("admin"), listUsers);
 r.get("/stats/orders", verifyJWT, requireRole("admin"), orderStats);
 r.get("/orders", verifyJWT, requireRole("admin"), listOrders);
 r.patch("/orders/:id", verifyJWT, requireRole("admin"), updateOrderStatus);
 
-// 👇 เพิ่มส่วนตรวจและอนุมัติ KYC
 r.get("/kyc/pending", verifyJWT, requireRole("admin"), listKycPending);
 r.put("/kyc/:userId/approve", verifyJWT, requireRole("admin"), approveKyc);
 r.put("/kyc/:userId/reject", verifyJWT, requireRole("admin"), rejectKyc);

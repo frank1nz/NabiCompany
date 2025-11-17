@@ -30,14 +30,17 @@ export const useAuth = create((set) => ({
     }
   },
 
+ 
   logout: () => {
+    // ลบ token / user / cart แค่ฝั่ง client
     localStorage.removeItem('token')
     set({ user: null, loading: false })
+
     try {
       useCart.getState().reset()
     } catch (err) {
-      // cart store may not be initialised yet; ignore
+     
     }
-    window.location.href = '/login'
+
   },
 }))
