@@ -17,7 +17,7 @@ import { darken } from '@mui/material/styles';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../store/authStore';
 import { useEffect, useState } from 'react';
 import { useCart } from '../store/cartStore';
@@ -30,13 +30,13 @@ export default function Navbar() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const auth = useAuth() || {};
   const user = auth.user || null;
-  const logout = auth.logout || (() => { });
+  const logout = auth.logout || (() => {});
+  const navigate = useNavigate();             
 
   const isLoggedIn = !!user;
   const isAdmin = user?.role === 'admin';
   const selfId = user?.id || user?._id;
 
-  // ✅ ตรวจว่า KYC ผ่านหรือยัง
   const isVerified =
     user?.isVerified === true ||
     user?.verified === true ||
@@ -50,26 +50,31 @@ export default function Navbar() {
   useEffect(() => {
     if (!isLoggedIn || isAdmin) return;
     if (cartLastUpdated !== null) return;
-    loadCart()?.catch(() => { });
+    loadCart()?.catch(() => {});
   }, [isLoggedIn, isAdmin, cartLastUpdated, loadCart]);
 
-  // 🔽 สำหรับเมนู admin dropdown
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleOpen = (e) => setAnchorEl(e.currentTarget);
   const handleClose = () => setAnchorEl(null);
 
-  // 📱 เมนูสำหรับจอเล็ก (มือถือ / แท็บเล็ต)
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleMobile = () => setMobileOpen((v) => !v);
   const closeMobile = () => setMobileOpen(false);
 
-  // ปิดเมนูมือถืออัตโนมัติเมื่อขยายหน้าจอเป็นเดสก์ท็อป
   useEffect(() => {
     if (!isMobile && mobileOpen) {
       setMobileOpen(false);
     }
   }, [isMobile, mobileOpen]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();         
+    } finally {
+      navigate('/');         
+    }
+  };
 
   return (
     <AppBar
@@ -109,15 +114,8 @@ export default function Navbar() {
             minHeight: { xs: 56, md: 64 },
           }}
         >
-          {/* 🌿 โลโก้แบรนด์ */}
-
-          <Typography
-
-            variant="h6"
-            paddingRight={1}
-            component={Link}
-            to="/"
-          >
+          {/* โลโก้ */}
+          <Typography variant="h6" paddingRight={1} component={Link} to="/">
             <Box
               sx={{
                 width: 50,
@@ -138,7 +136,6 @@ export default function Navbar() {
             </Box>
           </Typography>
 
-          {/* 🧭 แถบเมนูนำทาง / ปุ่มเมนูมือถือ */}
           <Box
             sx={{
               display: 'flex',
@@ -147,7 +144,7 @@ export default function Navbar() {
               flexGrow: 1,
             }}
           >
-            {/* เดสก์ท็อป: เมนูเรียงเป็นแถว */}
+            {/* Desktop menu */}
             <Box
               sx={{
                 display: { xs: 'none', md: 'flex' },
@@ -155,12 +152,10 @@ export default function Navbar() {
                 gap: 1.5,
               }}
             >
-              {/* เมนูหลัก */}
               <NavBtn to="/">Home</NavBtn>
               <NavBtn to="/products">Products</NavBtn>
               <NavBtn to="/contact">Contact</NavBtn>
 
-              {/* 🧍 สำหรับผู้ใช้ทั่วไป */}
               {isLoggedIn && !isAdmin && (
                 <>
                   {isVerified && (
@@ -172,7 +167,6 @@ export default function Navbar() {
                 </>
               )}
 
-              {/* 🛠 สำหรับแอดมิน */}
               {isAdmin && (
                 <>
                   {selfId && <NavBtn to={`/me/${selfId}`}>Profile</NavBtn>}
@@ -195,7 +189,6 @@ export default function Navbar() {
                     </IconButton>
                   </Tooltip>
 
-                  {/* เมนูสำหรับผู้ดูแลระบบ */}
                   <Menu
                     id="admin-menu"
                     anchorEl={anchorEl}
@@ -204,39 +197,23 @@ export default function Navbar() {
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                   >
-                    <MenuItem
-                      component={Link}
-                      to="/admin/kyc"
-                      onClick={handleClose}
-                    >
+                    <MenuItem component={Link} to="/admin/kyc" onClick={handleClose}>
                       KYC
                     </MenuItem>
-                    <MenuItem
-                      component={Link}
-                      to="/admin/orders"
-                      onClick={handleClose}
-                    >
+                    <MenuItem component={Link} to="/admin/orders" onClick={handleClose}>
                       Orders
                     </MenuItem>
-                    <MenuItem
-                      component={Link}
-                      to="/admin/products"
-                      onClick={handleClose}
-                    >
+                    <MenuItem component={Link} to="/admin/products" onClick={handleClose}>
                       Products
                     </MenuItem>
-                    <MenuItem
-                      component={Link}
-                      to="/admin/news"
-                      onClick={handleClose}
-                    >
+                    <MenuItem component={Link} to="/admin/news" onClick={handleClose}>
                       News
                     </MenuItem>
                   </Menu>
                 </>
               )}
 
-              {/* 🔐 ปุ่มล็อกอิน / ล็อกเอาท์ */}
+              {/* ปุ่ม Login / Logout */}
               {!isLoggedIn ? (
                 <>
                   <NavBtn to="/login">Login</NavBtn>
@@ -244,7 +221,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <Button
-                  onClick={logout}
+                  onClick={handleLogout}          
                   variant="contained"
                   sx={{
                     bgcolor: accent,
@@ -263,7 +240,7 @@ export default function Navbar() {
               )}
             </Box>
 
-            {/* มือถือ / แท็บเล็ต: แสดงปุ่มเมนู */}
+            {/* Mobile hamburger */}
             <IconButton
               onClick={toggleMobile}
               sx={{
@@ -278,7 +255,7 @@ export default function Navbar() {
           </Box>
         </Toolbar>
 
-        {/* 📱 เมนูแบบ dropdown สำหรับจอเล็ก */}
+        {/* Mobile menu */}
         {isMobile && mobileOpen && (
           <Box
             sx={{
@@ -290,25 +267,13 @@ export default function Navbar() {
               gap: 0.25,
             }}
           >
-            <NavBtn
-              to="/"
-              onClick={closeMobile}
-              sx={{ width: '100%', justifyContent: 'flex-start', borderRadius: 2 }}
-            >
+            <NavBtn to="/" onClick={closeMobile} sx={{ width: '100%', justifyContent: 'flex-start', borderRadius: 2 }}>
               Home
             </NavBtn>
-            <NavBtn
-              to="/products"
-              onClick={closeMobile}
-              sx={{ width: '100%', justifyContent: 'flex-start', borderRadius: 2 }}
-            >
+            <NavBtn to="/products" onClick={closeMobile} sx={{ width: '100%', justifyContent: 'flex-start', borderRadius: 2 }}>
               Products
             </NavBtn>
-            <NavBtn
-              to="/contact"
-              onClick={closeMobile}
-              sx={{ width: '100%', justifyContent: 'flex-start', borderRadius: 2 }}
-            >
+            <NavBtn to="/contact" onClick={closeMobile} sx={{ width: '100%', justifyContent: 'flex-start', borderRadius: 2 }}>
               Contact
             </NavBtn>
 
@@ -398,7 +363,7 @@ export default function Navbar() {
               <Button
                 onClick={() => {
                   closeMobile();
-                  logout();
+                  handleLogout();      
                 }}
                 variant="contained"
                 sx={{
@@ -427,7 +392,7 @@ export default function Navbar() {
   );
 }
 
-/* 🔹 ปุ่มลิงก์นำทางแบบ Reusable (ใช้ซ้ำได้ทุกที่) */
+/* ปุ่ม NavLink reuse */
 function NavBtn({ to, children, sx: sxOverride, onClick }) {
   const theme = useTheme();
   const brand = theme.palette.brand;

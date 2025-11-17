@@ -31,7 +31,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'products', element: <Products /> },
       { path: 'products/:id', element: <ProductDetail /> },
-      { path: 'about', element: <OurStory /> },   // 👈 เพิ่ม route Our Story
+      { path: 'about', element: <OurStory /> },   
       { path: 'terms', element: <Terms /> },
       { path: 'contact', element: <Contact /> },
 
@@ -104,9 +104,6 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
-
-      // (ทางเลือก) 404 แบบง่าย
-      // { path: '*', element: <div style={{padding:24}}>Not Found</div> },
     ],
   },
 ])
