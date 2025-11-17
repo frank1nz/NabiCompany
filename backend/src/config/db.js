@@ -1,14 +1,24 @@
 import mongoose from "mongoose";
 
-export async function connectDB(uri) {
+export async function connectDB() {
   mongoose.set("strictQuery", true);
 
-  const dbName = process.env.MONGO_DB_NAME || "test"; // 👈 ถ้าไม่ตั้ง env จะใช้ test เป็นค่า default
+  const uri = process.env.MONGODB_URI;
+  const dbName = process.env.MONGO_DB_NAME || "test";
 
-  await mongoose.connect(uri, { dbName });           // 👈 ให้ mongoose เลือก DB จากตรงนี้
-  console.log("MongoDB connected to", dbName);
+  if (!uri) {
+    throw new Error("❌ MONGODB_URI is not defined in environment variables");
+  }
 
-  // ไม่ต้อง syncIndexes แล้ว ถ้าคุณลบออกไปแล้วก็โอเค
-  // await Product.syncIndexes();
-  // console.log("Product indexes synced");
+  try {
+    await mongoose.connect(uri, {
+      dbName,
+      serverSelectionTimeoutMS: 10000, // 10 วินาที timeout
+    });
+
+    console.log("✅ MongoDB connected to", dbName);
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err);
+    throw err; // ให้ server.js จัดการต่อ
+  }
 }
