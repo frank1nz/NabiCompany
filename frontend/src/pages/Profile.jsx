@@ -2,12 +2,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import {
-  Paper, Typography, Stack, Chip, Divider, Button,
-  Box, Avatar, Skeleton, IconButton, Tooltip, Link as MuiLink, useTheme
+  Paper,
+  Typography,
+  Stack,
+  Chip,
+  Divider,
+  Button,
+  Box,
+  Avatar,
+  Skeleton,
+  IconButton,
+  Tooltip,
+  Link as MuiLink,
+  useTheme,
+  TextField,
+  Alert,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { getUserById } from '../lib/user';
+import { getUserById, updateUserProfile } from '../lib/user';
 import { useAuth } from '../store/authStore';
 const uploadBase = import.meta.env.VITE_UPLOAD_BASE;
 
@@ -21,6 +34,11 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [form, setForm]         = useState({ phone: '', address: '' });
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -39,6 +57,15 @@ export default function Profile() {
     })();
     return () => { alive = false; };
   }, [id]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const p = profile.profile || {};
+    setForm({
+      phone: p.phone || '',
+      address: p.address || '',
+    });
+  }, [profile]);
 
   if (authLoading) return null;
 
@@ -72,6 +99,31 @@ export default function Profile() {
   const copy = async (text) => {
     try { await navigator.clipboard.writeText(text); } catch {}
   };
+
+  async function handleSave() {
+    if (!id) return;
+    setSaving(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      const payload = {
+        phone: (form.phone || '').trim(),
+        address: (form.address || '').trim(),
+      };
+      const updated = await updateUserProfile(id, payload);
+      setProfile(updated);
+      setSaveSuccess('บันทึกข้อมูลเรียบร้อยแล้ว');
+      setEditMode(false);
+    } catch (e) {
+      setSaveError(
+        e?.response?.data?.message ||
+          e?.message ||
+          'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง'
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <Paper
@@ -158,9 +210,35 @@ export default function Profile() {
       <Stack spacing={3}>
         {/* Contact */}
         <Box>
-          <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 1 }}>
-            ข้อมูลการติดต่อ
-          </Typography>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mb: 1 }}
+          >
+            <Typography variant="subtitle2" fontWeight={800}>
+              ข้อมูลการติดต่อ
+            </Typography>
+            {isSelf && !loading && (
+              <Button
+                size="small"
+                variant={editMode ? 'outlined' : 'text'}
+                onClick={() => {
+                  setEditMode((v) => !v);
+                  setSaveError('');
+                  setSaveSuccess('');
+                  if (!editMode) {
+                    setForm({
+                      phone: p?.phone || '',
+                      address: p?.address || '',
+                    });
+                  }
+                }}
+              >
+                {editMode ? 'ยกเลิก' : 'แก้ไข'}
+              </Button>
+            )}
+          </Stack>
           {loading ? (
             <Stack spacing={0.5}>
               <Skeleton width={220} />
@@ -169,31 +247,106 @@ export default function Profile() {
             </Stack>
           ) : (
             <Stack spacing={0.5}>
-              <Typography variant="body2">Phone: {p?.phone || '-'}</Typography>
-              <Typography variant="body2">
-                LINE: {p?.lineId ? (
-                  <>
-                    {p.lineId}{' '}
-                    <IconButton size="small" onClick={() => copy(p.lineId)} aria-label="คัดลอก LINE ID">
-                      <ContentCopyIcon fontSize="small" />
-                    </IconButton>
-                  </>
-                ) : '-'}
-              </Typography>
-              <Typography variant="body2">
-                Facebook:{' '}
-                {p?.facebookProfileUrl ? (
-                  <MuiLink href={p.facebookProfileUrl} target="_blank" rel="noreferrer" underline="hover">
-                    เปิดลิงก์ <OpenInNewIcon sx={{ verticalAlign: 'middle', fontSize: 16, ml: 0.5 }} />
-                  </MuiLink>
-                ) : '-'}
-              </Typography>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
-                Address: {p?.address || '-'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                DOB: {p?.dob ? new Date(p.dob).toLocaleDateString() : '-'}
-              </Typography>
+              {editMode ? (
+                <Stack spacing={1.5} sx={{ maxWidth: 480 }}>
+                  <TextField
+                    label="เบอร์โทร"
+                    size="small"
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, phone: e.target.value }))
+                    }
+                    fullWidth
+                  />
+                  <TextField
+                    label="ที่อยู่"
+                    size="small"
+                    multiline
+                    minRows={2}
+                    value={form.address}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, address: e.target.value }))
+                    }
+                    fullWidth
+                  />
+                  {saveError && <Alert severity="error">{saveError}</Alert>}
+                  {saveSuccess && (
+                    <Alert severity="success">{saveSuccess}</Alert>
+                  )}
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleSave}
+                      disabled={saving}
+                    >
+                      {saving ? 'กำลังบันทึก…' : 'บันทึก'}
+                    </Button>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => {
+                        setEditMode(false);
+                        setSaveError('');
+                        setSaveSuccess('');
+                        setForm({
+                          phone: p?.phone || '',
+                          address: p?.address || '',
+                        });
+                      }}
+                    >
+                      ยกเลิก
+                    </Button>
+                  </Stack>
+                </Stack>
+              ) : (
+                <>
+                  <Typography variant="body2">
+                    Phone: {p?.phone || '-'}
+                  </Typography>
+                  <Typography variant="body2">
+                    LINE:{' '}
+                    {p?.lineId ? (
+                      <>
+                        {p.lineId}{' '}
+                        <IconButton
+                          size="small"
+                          onClick={() => copy(p.lineId)}
+                          aria-label="คัดลอก LINE ID"
+                        >
+                          <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    ) : (
+                      '-'
+                    )}
+                  </Typography>
+                  <Typography variant="body2">
+                    Facebook:{' '}
+                    {p?.facebookProfileUrl ? (
+                      <MuiLink
+                        href={p.facebookProfileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        underline="hover"
+                      >
+                        เปิดลิงก์{' '}
+                        <OpenInNewIcon
+                          sx={{ verticalAlign: 'middle', fontSize: 16, ml: 0.5 }}
+                        />
+                      </MuiLink>
+                    ) : (
+                      '-'
+                    )}
+                  </Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                    Address: {p?.address || '-'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    DOB: {p?.dob ? new Date(p.dob).toLocaleDateString() : '-'}
+                  </Typography>
+                </>
+              )}
             </Stack>
           )}
         </Box>

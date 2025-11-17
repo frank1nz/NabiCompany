@@ -12,6 +12,7 @@ import OurStory from './pages/OurStory'   // 👈 เพิ่ม
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Terms from './pages/Terms'
+import Contact from './pages/Contact'
 
 import Orders from './pages/Orders'
 import Profile from './pages/Profile'
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'products/:id', element: <ProductDetail /> },
       { path: 'about', element: <OurStory /> },   // 👈 เพิ่ม route Our Story
       { path: 'terms', element: <Terms /> },
+      { path: 'contact', element: <Contact /> },
 
       {
         path: 'login',

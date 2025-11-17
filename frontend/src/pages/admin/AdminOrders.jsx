@@ -364,7 +364,14 @@ export default function AdminOrders() {
         </Box>
 
         {/* Table */}
-        <Box sx={{ px: 2, pb: 2 }}>
+        <Box
+          sx={{
+            px: 2,
+            pb: 2,
+            width: '100%',
+            overflowX: 'auto',
+          }}
+        >
           <Table
             size="small"
             sx={{

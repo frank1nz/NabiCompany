@@ -265,8 +265,12 @@ export default function AdminProducts() {
       >
         <Toolbar
           sx={{
-            px: 2, py: 1.25, gap: 1.25,
-            justifyContent: 'space-between',
+            px: 2,
+            py: 1.25,
+            gap: 1.25,
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'flex-start', md: 'center' },
+            justifyContent: { xs: 'flex-start', md: 'space-between' },
             position: 'sticky',
             top: 0,
             zIndex: 1,
@@ -274,7 +278,14 @@ export default function AdminProducts() {
             borderBottom: `1px solid ${BRAND.border}`,
           }}
         >
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2}
+            flexWrap="wrap"
+            rowGap={1.25}
+            sx={{ flex: 1, minWidth: 0 }}
+          >
             <Stack direction="row" alignItems="center" spacing={1}>
               <Box
                 sx={{
@@ -311,7 +322,8 @@ export default function AdminProducts() {
                 ),
               }}
               sx={{
-                minWidth: 280,
+                minWidth: { xs: '100%', sm: 240 },
+                maxWidth: { xs: '100%', md: 360 },
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
                   backgroundColor: '#fff',

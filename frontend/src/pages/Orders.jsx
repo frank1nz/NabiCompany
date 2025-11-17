@@ -321,17 +321,18 @@ export default function Orders() {
         {!!checkoutError && <Alert severity="error" sx={{ mb: 2 }}>{checkoutError}</Alert>}
         {!!checkoutSuccess && <Alert severity="success" sx={{ mb: 2 }}>{checkoutSuccess}</Alert>}
 
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>สินค้า</TableCell>
-              <TableCell align="right">ราคา/ชิ้น</TableCell>
-              <TableCell align="center" sx={{ width: 220 }}>จำนวน</TableCell>
-              <TableCell align="right">รวม</TableCell>
-              <TableCell align="center" sx={{ width: 80 }}>ลบ</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+          <Table size="small" stickyHeader sx={{ minWidth: 600 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>สินค้า</TableCell>
+                <TableCell align="right">ราคา/ชิ้น</TableCell>
+                <TableCell align="center" sx={{ width: 220 }}>จำนวน</TableCell>
+                <TableCell align="right">รวม</TableCell>
+                <TableCell align="center" sx={{ width: 80 }}>ลบ</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
             {cartLoading && Array.from({ length: 3 }).map((_, i) => (
               <TableRow key={`sk-${i}`}>
                 <TableCell><Skeleton width={260} /><Skeleton width={180} /></TableCell>
@@ -453,6 +454,7 @@ export default function Orders() {
             )}
           </TableBody>
         </Table>
+        </Box>
 
         <Divider sx={{ my: 3 }} />
 
@@ -506,19 +508,20 @@ export default function Orders() {
 
         {ordersError && <Alert severity="error" sx={{ mb: 2 }}>{ordersError}</Alert>}
 
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>รหัสคำสั่งซื้อ</TableCell>
-              <TableCell>สถานะ</TableCell>
-              <TableCell>การชำระเงิน</TableCell>
-              <TableCell align="right">ยอดรวม</TableCell>
-              <TableCell align="right">จำนวนสินค้า</TableCell>
-              <TableCell>อัปเดตล่าสุด</TableCell>
-              <TableCell align="right">จัดการ</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+          <Table size="small" stickyHeader sx={{ minWidth: 720 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>รหัสคำสั่งซื้อ</TableCell>
+                <TableCell>สถานะ</TableCell>
+                <TableCell>การชำระเงิน</TableCell>
+                <TableCell align="right">ยอดรวม</TableCell>
+                <TableCell align="right">จำนวนสินค้า</TableCell>
+                <TableCell>อัปเดตล่าสุด</TableCell>
+                <TableCell align="right">จัดการ</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
             {ordersLoading && Array.from({ length: 4 }).map((_, i) => (
               <TableRow key={`order-sk-${i}`}>
                 <TableCell><Skeleton width={180} /></TableCell>
@@ -586,6 +589,7 @@ export default function Orders() {
             )}
           </TableBody>
         </Table>
+        </Box>
       </Paper>
 
       {/* ----------------------------- PAYMENT DIALOG --------------------------- */}

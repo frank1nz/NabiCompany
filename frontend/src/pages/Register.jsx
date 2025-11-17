@@ -277,7 +277,7 @@ export default function Register() {
                       size="medium"
                       sx={{
                         ...bigFieldSx,                // คงสไตล์พื้นฐาน
-                        width: 230,                   // ← ปรับความกว้างที่นี่ เช่น 360, 400, '80%' ได้หมด
+                        width: { xs: '100%', md: 230 },
                         '& .MuiOutlinedInput-root': { // merge ของเดิมก่อนค่อยใส่ใหม่
                           ...bigFieldSx['& .MuiOutlinedInput-root'],
                           minHeight: 60,              // ← ปรับความสูงช่อง
@@ -333,7 +333,8 @@ export default function Register() {
                       ...bigFieldSx,
 
                       // 2) เพิ่มความกว้างเฉพาะช่องนี้
-                      width: 480, // ← ปรับได้ตามต้องการ (ตัวเลข px หรือ '80%' ก็ได้)
+                      width: '100%',
+                      maxWidth: 480,
 
                       // 3) เวลาแก้ส่วน .MuiOutlinedInput-root ต้อง merge ของเดิมก่อน
                       '& .MuiOutlinedInput-root': {
@@ -367,7 +368,8 @@ export default function Register() {
                     size="medium"
                     sx={{
                       ...bigFieldSx,
-                      width: ADDRESS.width,
+                      width: '100%',
+                      maxWidth: ADDRESS.width,
                       '& .MuiOutlinedInput-root': {
                         ...bigFieldSx['& .MuiOutlinedInput-root'],
                         borderRadius: RADIUS,

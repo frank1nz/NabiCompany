@@ -19,6 +19,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const alertRef = useRef(null);
 
@@ -36,17 +37,21 @@ export default function Login() {
   const [search] = useSearchParams();
   const fromQuery = search.get('from');
 
-  const emailOk = /\S+@\S+\.\S+/.test(email);
+  const normalizedEmail = email.trim().toLowerCase();
+  const emailOk =
+    normalizedEmail.length > 0 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
   const pwOk = password.length >= 6;
   const canSubmit = emailOk && pwOk && !loading;
 
   async function onSubmit(event) {
     event.preventDefault();
+    setEmailTouched(true);
     if (!canSubmit) return;
     setError('');
     setLoading(true);
     try {
-      const data = await login({ email: email.trim(), password });
+      const data = await login({ email: normalizedEmail, password });
       setToken?.(data.token);
       if (data.user) setUser?.(data.user);
 
@@ -174,10 +179,18 @@ export default function Login() {
                 type="email"
                 placeholder='อีเมลของคุณ'
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value || '';
+                  setEmail(value.toLowerCase());
+                  if (!emailTouched) setEmailTouched(true);
+                }}
                 required
-                error={!!email && !emailOk}
-                helperText={email && !emailOk ? 'Invalid email format' : ' '}
+                error={emailTouched && !emailOk}
+                helperText={
+                  emailTouched && !emailOk
+                    ? 'กรุณากรอกอีเมลให้ถูกต้อง (ใช้ตัวพิมพ์เล็ก)'
+                    : ' '
+                }
                 autoComplete="email"
                 disabled={loading}
                 fullWidth
