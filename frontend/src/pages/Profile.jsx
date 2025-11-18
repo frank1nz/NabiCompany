@@ -24,6 +24,30 @@ import { getUserById, updateUserProfile } from '../lib/user';
 import { useAuth } from '../store/authStore';
 const uploadBase = import.meta.env.VITE_UPLOAD_BASE;
 
+const makeUploadUrl = (rawPath) => {
+  if (!rawPath) return '#';
+
+  const base =
+    uploadBase || (typeof window !== 'undefined' ? window.location.origin : '');
+
+  const normalized = String(rawPath)
+    // ตัด host ที่อาจหลุดมาจาก backend ออก เช่น https://.../uploads/...
+    .replace(/^https?:\/\/[^/]+/i, '')
+    // ลบ slash หน้าสุด
+    .replace(/^\/+/, '')
+    // ลบ prefix app/ ถ้ามี
+    .replace(/^app\//, '');
+
+  // ให้แน่ใจว่ามี uploads/ นำหน้า
+  const uploadsIdx = normalized.indexOf('uploads/');
+  const path =
+    uploadsIdx !== -1
+      ? normalized.slice(uploadsIdx) // ใช้ตั้งแต่ uploads/...
+      : `uploads/${normalized}`; // ถ้าไม่มีก็เติมให้
+
+  return `${base.replace(/\/$/, '')}/${path}`;
+};
+
 export default function Profile() {
   const { id } = useParams();
   const { user, loading: authLoading } = useAuth();
@@ -39,6 +63,8 @@ export default function Profile() {
   const [form, setForm]         = useState({ phone: '', address: '' });
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
+
+  
 
   useEffect(() => {
     let alive = true;
@@ -354,7 +380,7 @@ export default function Profile() {
         <Divider />
 
         {/* KYC */}
-        <Box>
+         <Box>
           <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 1 }}>
             ข้อมูล KYC
           </Typography>
@@ -382,7 +408,7 @@ export default function Profile() {
                     size="small"
                     variant="outlined"
                     component="a"
-                    href={`${uploadBase}/${kyc.idCardImagePath}`}
+                    href={makeUploadUrl(kyc.idCardImagePath)}
                     target="_blank"
                     rel="noreferrer"
                     endIcon={<OpenInNewIcon />}
@@ -395,7 +421,7 @@ export default function Profile() {
                     size="small"
                     variant="outlined"
                     component="a"
-                    href={`${uploadBase}/${kyc.selfieWithIdPath}`}
+                    href={makeUploadUrl(kyc.selfieWithIdPath)}
                     target="_blank"
                     rel="noreferrer"
                     endIcon={<OpenInNewIcon />}
