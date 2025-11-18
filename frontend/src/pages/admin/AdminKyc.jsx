@@ -29,6 +29,20 @@ export default function AdminKyc() {
   const theme = useTheme()
   const accent = theme.palette.secondary.main
 
+  const makeUploadUrl = (rawPath) => {
+    if (!rawPath) return '#'
+
+    // ดึง origin จาก env หรือจาก window
+    const origin =
+      import.meta.env.VITE_UPLOAD_BASE || window.location.origin
+
+    // ตัดทุกอย่างหน้า "uploads/" ทิ้งกัน /app โผล่
+    const filePart = rawPath.replace(/^.*uploads\//, '')
+
+    // ประกอบ URL ให้เหลือแค่ /uploads/filename
+    return `${origin.replace(/\/$/, '')}/uploads/${filePart}`
+  }
+
   const loadUsers = () =>
     fetchPendingKyc()
       .then((data) => {
@@ -145,25 +159,27 @@ export default function AdminKyc() {
                           size="small"
                           variant="outlined"
                           component="a"
-                          href={`${uploadBase}/${user.kyc.idCardImagePath}`}
+                          href={makeUploadUrl(user.kyc.idCardImagePath)}
                           target="_blank"
                           rel="noreferrer"
                         >
                           บัตรประชาชน
                         </Button>
                       )}
+
                       {user.kyc?.selfieWithIdPath && (
                         <Button
                           size="small"
                           variant="outlined"
                           component="a"
-                          href={`${uploadBase}/${user.kyc.selfieWithIdPath}`}
+                          href={makeUploadUrl(user.kyc.selfieWithIdPath)}
                           target="_blank"
                           rel="noreferrer"
                         >
                           เซลฟี่
                         </Button>
                       )}
+
                     </Stack>
                   </Stack>
                 </Stack>
